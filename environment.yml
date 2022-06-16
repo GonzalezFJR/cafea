@@ -1,4 +1,4 @@
-name: coffea-luispla
+name: my-cafea-env
 channels:
   - defaults
   - conda-forge

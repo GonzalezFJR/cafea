@@ -17,7 +17,6 @@ from coffea.nanoevents import NanoAODSchema
 import triggerSFs
 from cafea.modules import samples
 from cafea.modules import fileReader
-from cafea.modules.dataDrivenEstimation import DataDrivenProducer
 
 if __name__ == '__main__':
 

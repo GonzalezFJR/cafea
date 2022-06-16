@@ -17,7 +17,6 @@ from coffea.nanoevents import NanoAODSchema
 import ttrun3 
 from cafea.modules import samples
 from cafea.modules import fileReader
-from cafea.modules.dataDrivenEstimation import DataDrivenProducer
 
 # submit: sbatch -p batch -c 60 --wrap "python analysis/tt5TeV/run.py cafea/json/5TeV/data/HighEGJet.json -n 58 -o HighEGJet"
 

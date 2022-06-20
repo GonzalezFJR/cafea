@@ -9,12 +9,12 @@ from config import *
 
 class QCD:
 
-  def __init__(self, path, prDic, bkglist, lumi, categories={}, varlist=None):
+  def __init__(self, path, prDic, bkglist, lumi, categories={}, var=None):
     self.path = path
     self.prDic = prDic
     self.bkglist = bkglist
     self.lumi = lumi
-    self.varlist = [varlist] if isinstance(varlist, str) else varlist
+    self.varlist = [var] if isinstance(var, str) else var
 
     self.categories = categories
     self.cat_fake = self.categories.copy()

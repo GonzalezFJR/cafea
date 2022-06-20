@@ -1,7 +1,7 @@
 from numpy import sqrt
-from cafea.plotter.plotter import GetSystListForHisto
-from cafea.plotter.OutText import OutText
-from cafea.plotter.Uncertainties import GetStringNumUnc as NU
+from topcoffea.plotter.plotter import GetSystListForHisto
+from topcoffea.plotter.OutText import OutText
+from topcoffea.plotter.Uncertainties import GetStringNumUnc as NU
 
 def squaresum(*vals):
   return sqrt(sum([x*x for x in vals]))
@@ -129,7 +129,7 @@ class xsec:
       u = self.xsecunc[b]
       t.line('%s '%lab + t.vsep() + form%u + t.vsep() + form%(u/nom*100) + ' \%')
     t.bar() 
-    tots = sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in (list(self.bkg.keys()) + list(self.modunc.keys()) + list(self.expunc.keys())) ]))
+    tots = self.GetTotalSystematic()
     lumi = self.xsecunc['lumi']
     stat = self.xsecunc['stat']
     total = sqrt(sum([x*x for x in [tots, lumi, stat]]))
@@ -249,6 +249,15 @@ class xsec:
     self.fiducialSyst = 0
     self.fiducialLumi = 0
 
+  def GetTotalSystematic(self):
+    return sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in (list(self.bkg.keys()) + list(self.modunc.keys()) + list(self.expunc.keys())) ]))
+
+  def GetTotalUncertainty(self):
+    tots = self.GetTotalSystematic()
+    lumi = self.xsecunc['lumi']
+    stat = self.xsecunc['stat']
+    total = sqrt(sum([x*x for x in [tots, lumi, stat]]))
+    return total
 
 
   ##############################################################################################

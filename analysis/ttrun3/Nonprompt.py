@@ -1,50 +1,57 @@
 from config import *
 
-def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
-  plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
-  if not CheckHistoCategories(plt.hists[var], categories):
-    print("Nope")
-    return
-  plt.SetRatio(doRatio)
-  plt.SetOutpath(outpath)
-  plt.plotData = doData
-  plt.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
-  plt.SetCategories(categories)
-  plt.SetDataName('Pseudodata')
-  label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
-  #AddLabel(self, x, #y, text, options={}):
-  plt.SetRegion(label)
-  plt.SetOutput(output)
-  
-  plt.SetSystematics(syst=['lepSF', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
-  plt.Stack(var, xtit='', ytit='', dosyst=True)
+prdic = {'Prompt': 'TTTo2L2Nu, tbarW, tW, WWTo2L2Nu, WZTo3LNu, DYJetsToLL_M50, DY_M10to50', 'Nonprompt': 'WJetsToLNu, TTToSemiLep'}
 
-  #plt.PrintYields('counts')
+p = plotter(path, prDic=prdic, bkgList=bkglist, colors=colordic, lumi=lumi)
+p.SetDataName('pseudodata')
 
-def Print2lplots():
-  for c in ['em', 'ee', 'mm']:
-    for l in ['dilep', 'g2jets']:
-      outp = outpath+'/'+l+'/'
-      cat = {'channel':c, 'level':l}#, 'syst':'norm'}
-      for var in ['njets', 'ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2']:
-        if l=='dilep' and var in ['j0pt', 'j0eta']: continue
-        outname = "%s_%s_%s"%(var, c, l)
-        Draw(var, cat, outname, outpath=outp)
-      for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta']:
-        cat['sign'] = 'OS'
-        outname = "%s_%s_%s"%(var, c, l)
-        Draw(var, cat, outname, outpath=outp)
+def GetYieldsNP(plotter, sign='OS', process='Nonprompt', level='g2jets'):
+  cat = {'level':level, 'syst':'norm', 'sign':sign, 'channel':'em'}
+  if process == 'data':
+    h = plotter.GetHistogram('counts', process=None, categories=cat)
+    h.scale(lumi)
+    h,_ = plotter.GetData('counts', h)
+  else:
+    h = plotter.GetHistogram('counts', process=process, categories=cat)
+    h.scale(lumi)
+  y, e = h.values(sumw2=True)[()]
+  if process == 'data': e = np.sqrt(y)
+  return y, e
 
-outpath = '/nfs/fanae/user/juanr/www/public/ttrun3/usingRun2/' + outpatho
-if not var is None:
-  categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
-  outp = outpath+'/'+level+'/'
-  outname = "%s_%s_%s"%(var, *ch, level)
-  Draw(var, categories, outname, outpath=outp)
+def Nonprompt(plt, level='g2jets', save=False):
+  NdataSS, NdataSS_e = GetYieldsNP(p, 'SS', 'data', level)
+  NpSS   , NpSS_e    = GetYieldsNP(p, 'SS', 'Prompt', level)
+
+  NnpOS, NnpOS_e = GetYieldsNP(p, 'OS', 'Nonprompt', level)
+  NnpSS, NnpSS_e = GetYieldsNP(p, 'SS', 'Nonprompt', level)
+
+  NSS, NSS_e = (NdataSS - NpSS, NdataSS_e - NpSS_e)
+  fact   = NnpOS / NnpSS
+  fact_e = fact*np.sqrt( (NnpOS_e/NnpOS)**2 + (NnpSS_e/NnpSS)**2 )
+
+  NOS   = NSS*fact
+  NOS_e = NOS * np.sqrt( (NSS_e/NSS)**2 + (fact_e/fact)**2 )
+
+  if save:
+    t = OutText(outpatho, 'Nonprompt_'+level, 'new', 'tex')
+    t.bar()
+    t.SetTexAlign('l c')
+    t.line("Source" + t.vsep() + "$\mathrm{e}^\pm\mu^\mp$"); t.sep()
+    t.line("Prompt SS (MC)" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NpSS, NpSS_e));
+    t.line("Data SS" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NdataSS, NdataSS_e));
+    t.line("Data - prompt (MC) SS" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NSS, NSS_e)); t.sep()
+    
+    t.line("Nonprompt SS (MC)" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NnpSS, NnpSS_e) );
+    t.line("Nonprompt OS (MC)" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NnpOS, NnpOS_e) );
+    t.line("Ratio OS/SS (MC)" + t.vsep() + "%1.2f $\pm$ %1.2f"%(fact, fact_e) ); t.sep()
+
+    t.line("Nonprompt estimate" + t.vsep() + "%1.2f $\pm$ %1.2f"%(NOS, NOS_e) ); t.sep()
+    t.write()
+
+  return NOS, NOS_e
 
 
-else:
-  #Draw('invmass', {'channel':['em'], 'level':'g2jets', 'syst':'norm'}, output='invmass_em_g2jets', outpath=outpath)
-  Print2lplots()
+if __name__ == '__main__':
+  Nonprompt(p, level=level, save=True)
 
 

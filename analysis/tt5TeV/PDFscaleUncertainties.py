@@ -6,7 +6,8 @@
 
 from config import *
 
-h = GetHisto(path, 'PDF', categories={'level':level, 'channel':ch,'syst':'norm'})
+if __name__ == '__main__':
+  h = GetHisto(path, 'PDF', categories={'level':level, 'channel':ch,'syst':'norm'})
 #PrintHisto(h)
 #print('values = ', h.values())
 #exit()

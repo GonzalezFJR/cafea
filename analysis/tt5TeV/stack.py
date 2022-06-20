@@ -50,7 +50,7 @@ def Print1lplots():
     for l in ['g4jets', '0b', '1b', '2b']:
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
       outp = outpath+'/1l/'+c+'/'+l+'/'
-      for var in ['ht', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj']:
+      for var in ['counts']: #['ht', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj']:
         if l=='incl' and var in ['j0pt', 'j0eta']: continue
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp, doQCD=doQCD)

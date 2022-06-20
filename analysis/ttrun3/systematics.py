@@ -1,6 +1,6 @@
 from config import *
-from cafea.plotter.xsec import *
-from cafea.modules.fileReader import *
+from topcoffea.plotter.xsec import *
+from topcoffea.modules.fileReader import *
 from PDFscaleUncertainties import *
 
 names = {
@@ -12,6 +12,7 @@ names = {
   'ISR' : 'Initial-state radiation',
   'FSR' : 'Final-state radiation',
   'DY' : 'Drell--Yan',
+  'PU' : 'Pileup reweighting',
 }
 
 #path = 'histos/run3/5jun2022/'
@@ -28,7 +29,7 @@ tuneup , tunedo = GetModSystHistos(path, 'TTTo2L2Nu_UE', 'UE', var='counts')
 p.AddExtraBkgHist([hdampup, hdampdo, tuneup, tunedo], add=True)
 
 ### Create xsec object
-x = xsec('tt', 0.01, {'tW':0.1, 'Nonprompt':0.2, 'DY':0.1, 'Diboson':0.3}, plotter=p, verbose=1, thxsec=922.45, experimental=['lepSF', 'trigSF', 'JES'], modeling=['UE', 'hdamp', 'ISR', 'FSR'], categories=categories)
+x = xsec('tt', 0.03, {'tW':0.15, 'Nonprompt':0.2, 'DY':0.2, 'Diboson':0.2}, plotter=p, verbose=1, thxsec=922.45, experimental=['lepSF', 'trigSF', 'JES', 'PU'], modeling=['UE', 'hdamp', 'ISR', 'FSR'], categories=categories, verbose=3)
 x.SetNames(names)
 pdf   = Get1bPDFUnc(  path, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)
 scale = Get1binScaleUnc(path, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)

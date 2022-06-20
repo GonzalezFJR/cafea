@@ -11,8 +11,8 @@ import coffea
 from coffea import hist, processor
 from coffea.hist import plot, Hist
 from cycler import cycler
-from cafea.plotter.OutText import OutText
-from cafea.plotter.Uncertainties import *
+from topcoffea.plotter.OutText import OutText
+from topcoffea.plotter.Uncertainties import *
 
 def StackOverUnderflow(v, overflow):
   if overflow=='all':
@@ -490,17 +490,26 @@ def GetSystListForHisto(h, systAxisName="syst", normLabel='norm', stat=False):
 def GetAsimov(histo, processes=None, prname='process'):
   if processes is None:
     processes = [x.name for x in histo.identifiers(prname)]
+    if 'data' in processes: 
+      processes.pop(processes.index('data'))
   var = [x.name for x in histo.dense_axes()][0]
-  h = histo.group(prname, hist.Cat(prname, prname), {'data': processes})
-  h1d = h.integrate('process', 'data')
+  return histo.integrate(prname, processes)
+  h = histo.group(prname, hist.Cat(prname, prname), {'asimov': processes})
+  h1d = h.integrate('process','asimov')
+  return h1d
+  '''
   bins, values = GetXYfromH1D(h1d, axis=var, mode='centers', errors=False, overflow=False)
+  print('values h1d = ', values)
   # copy a histogram and clean it, then fill
   datafill = []
-  for b, d in zip(bins, np.array(values, dtype=int)): datafill += [b]*d
+  for b, d in zip(bins, np.array(values)): 
+    datafill += [b]*d
+  print('datafill = ', datafill)
   newh = h.copy(content=False)
-  newh.fill(**{'weight' : np.ones_like(datafill), var : np.array(datafill), 'process':'data'})
+  newh.fill(**{'weight' : np.ones_like(datafill), var : np.array(datafill), 'process':'asimov'})
   #print('Getting data from Asimov')
-  return newh.integrate("process", "data")
+  return newh.integrate("process", "asimov")
+  '''
 
 def GetPseudodata(histo, processes=None):
   ''' Only one sparse axes for processes, please '''
@@ -882,7 +891,7 @@ class plotter:
 
   ########################################################################
   ### Save combine
-  def SaveCombine(self, var, channel, categories={}, outname='temp'):
+  def SaveCombine(self, var, channel, categories={}):
     import uproot3
     if categories == {}: categories = self.categories
     prlabel = self.processLabel
@@ -890,20 +899,29 @@ class plotter:
     h = self.GetHistogram(var, categories=categories) 
 
     # Open the file
-    out = self.outpath + outname + '.root'
+    out = self.outpath + channel + '.root'
     if os.path.isfile(out): os.system('mv %s %s.old'%(out, out))
+    if not os.path.isdir(self.outpath): os.system('mkdir -p ' + self.outpath)
     fout = uproot3.create(out)
 
     # Get processes
     processes = [x.name for x in list(h.identifiers(prlabel))]
+    processes_no_data = processes.copy()
+    if 'data' in processes_no_data: processes_no_data.pop(processes_no_data.index('data'))
     
     # Nominal histograms
     hnorm = h.integrate(systlabel, self.systNormLabel)
+
     for pr in processes:
       hpr = hnorm.integrate(prlabel, pr)
-      if pr==self.dataName : pr = 'data_obs'
+      if pr.lower() in [self.dataName.lower(), 'data']: continue
       else: hpr.scale(self.lumi)
       fout[pr] = hist.export1d(hpr)
+
+    if self.dataName.lower() == 'asimov': 
+      hnorm.scale(self.lumi)
+    hdata,_ = self.GetData(var, hnorm)
+    fout['data_obs'] = hist.export1d(hdata)
 
     # Get systematics
     syst = GetSystListForHisto(h, systlabel, self.systNormLabel)
@@ -922,7 +940,19 @@ class plotter:
     fout.close()
 
 
-
+  def GetData(self, hname, h=None):
+    if   self.dataName.lower() == 'pseudodata': 
+      if h is None: print("ERROR: we need a histogram to create pseudodata!")
+      hData = GetPseudodata(h)
+      dataLabel = 'Pseudodata'
+    elif self.dataName.lower() == 'asimov':
+      if h is None: print("ERROR: we need a histogram to create an Asimov!")
+      hData = GetAsimov(h)
+      dataLabel = 'Asimov'
+    else: 
+      hData = self.GetHistogram(hname, self.dataName)
+      dataLabel = 'Data'
+    return hData, dataLabel
 
 
 
@@ -1089,15 +1119,7 @@ class plotter:
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
-      if   self.dataName.lower() == 'pseudodata': 
-        hData = GetPseudodata(h)
-        dataLabel = 'Pseudodata'
-      elif self.dataName.lower() == 'asimov':
-        hData = GetAsimov(h)
-        dataLabel = 'Asimov'
-      else: 
-        hData = self.GetHistogram(hname, self.dataName)
-        dataLabel = 'Data'
+      hData, dataLabel = self.GetData(hname, h)
       if self.systLabel in [x.name for x in hData.axes()]:
         hData = hData.integrate(self.systLabel, self.systNormLabel)
       hist.plot1d(hData, ax=ax, clear=False, error_opts=data_err_opts, binwnorm=binwnorm)

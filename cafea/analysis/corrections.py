@@ -207,7 +207,7 @@ def GetFTriggerSF5TeV(path, ch='m'):
   GetTrigDo = lookup_tools.dense_lookup.dense_lookup(do   , [hu.axis('pt').edges(), hu.axis('abseta').edges()])
   return [GetTrig, GetTrigDo, GetTrigUp]
 
-path_trigSF5TeV = cafea_path('data/5TeV/triggerSFs.pkl.gz')
+path_trigSF5TeV = cafea_path('data/triggerSFs/5TeV/triggerSFs.pkl.gz')
 GetElecTrigSF5TeV, GetElecTrigSF5TeVDown, GetElecTrigSF5TeVUp = GetFTriggerSF5TeV(path_trigSF5TeV, 'e')
 GetMuonTrigSF5TeV, GetMuonTrigSF5TeVDown, GetMuonTrigSF5TeVUp = GetFTriggerSF5TeV(path_trigSF5TeV, 'm')
 def GetTriggerSF5TeV(pt, eta, ch='e'):

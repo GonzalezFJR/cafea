@@ -10,10 +10,10 @@ np.seterr(divide='ignore', invalid='ignore', over='ignore')
 from coffea import hist, processor 
 from coffea.hist import plot
 import os, sys
-from cafea.plotter.OutText import OutText
+from topcoffea.plotter.OutText import OutText
 
-from cafea.plotter.plotter import plotter, GetH1DfromXY
-from cafea.plotter.plotter import *
+from topcoffea.plotter.plotter import plotter, GetH1DfromXY
+from topcoffea.plotter.plotter import *
 
 import argparse
 parser = argparse.ArgumentParser(description='You can customize your run')
@@ -40,6 +40,7 @@ syst = 'norm'
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
+if   isinstance(level, str) and ',' in level: level = level.replace(' ', '').split(',')
 lumi = 302; # pb
 year = 2017
 

@@ -13,10 +13,11 @@ from optparse import OptionParser
 from coffea.analysis_tools import PackedSelection
 from coffea.lumi_tools import LumiMask
 
-from cafea.analysis.objects import *
-from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetTriggerSF
-from cafea.analysis.selection import *
-from cafea.modules.paths import cafea_path
+from topcoffea.modules.GetValuesFromJsons import get_param
+from topcoffea.modules.objects import *
+from topcoffea.modules.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetTriggerSF, GetPUSF
+from topcoffea.modules.selection import *
+from topcoffea.modules.paths import topcoffea_path
 
 doSyst = True
 
@@ -87,7 +88,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         doPDFunc = "sumPDFWeights" in self._samples[dataset]
 
         # Golden JSON !
-        # golden_json_path = cafea_path("data/goldenJsons/Cert_306546-306826_5TeV_EOY2017ReReco_Collisions17_JSON.txt")
+        # golden_json_path = topcoffea_path("data/goldenJsons/Cert_306546-306826_5TeV_EOY2017ReReco_Collisions17_JSON.txt")
 
         if doPDFunc:
           sowPDF       = self._samples[dataset]["sumPDFWeights"]
@@ -223,6 +224,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         if not isData: # Apply SFs
           weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
           weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
+          weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
         # PS = ISR, FSR (on ttPS only)
         if doPS: 
           i_ISRdown = 0; i_FSRdown = 1; i_ISRup = 2; i_FSRup = 3
@@ -236,7 +238,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Add systematics
         systList = ["norm"]
         systJets = ['JESUp', 'JESDo']
-        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown"]+systJets
+        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst: systList = ["norm"]
 

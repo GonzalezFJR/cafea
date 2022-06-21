@@ -155,4 +155,21 @@ def isClean(obj_A, obj_B, drmin=0.4):
 ### Run 3 definitions
 ###############################################################
 
+def MuonMediumPrimptID(muons):
+  ''' Medium prompt ID, including dz<0.1 and dxy< 0.02 '''
+  return (muons.mediumPromptId)
+  
+
+def MuonTightIso(muons):
+  ''' Tight ISO < 0.15 '''
+  return (muons.pfRelIso04_all < 0.15)
+
+def isMuonPOGM(muons, ptCut=20, etaCut=2.4):
+  ''' https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonSelection '''
+  return (MuonTightIso(muons))&(MuonMediumPrimptID(muons)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
+  
+def isElectronMVA(electrons, ptCut=20, etaCut=2.5):
+  ''' Electron MVA eff = 0.80: https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun2 '''
+  return (electrons.mvaFall17V2Iso_WP80)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)
+
 ###############################################################

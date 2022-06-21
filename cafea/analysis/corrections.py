@@ -10,8 +10,7 @@ import os, sys
 from cafea.modules.paths import cafea_path
 import numpy as np
 import awkward as ak
-import gzip
-import pickle
+import gzip, pickle, json
 from coffea.jetmet_tools import FactorizedJetCorrector, JetCorrectionUncertainty
 from coffea.jetmet_tools import JECStack, CorrectedJetsFactory, CorrectedMETFactory
 from coffea.btag_tools.btagscalefactor import BTagScaleFactor
@@ -22,19 +21,54 @@ basepathFromTTH = 'data/fromTTH/'
 
 ###### Lepton scale factors
 ################################################################
+
+def FixJsonMuonPOG(path, path2='', verbose=False):
+ ''' Make readable a json from the muon POG... '''
+ if path2 == '':
+   path2 = path[:-5]
+   path2 = path2 + '_fixed.json'
+ counter = 0
+ with open(path) as f:
+  j = json.load(f)
+  for k in j.keys():
+   for c1 in j[k]: # c1 = abseta_pt
+     for c2 in j[k][c1]:
+       if c2 == 'binning':
+         counter += 1
+         if verbose: print(' [%i] Removing binning...'%counter)
+         del j[k][c1][c2]
+         break
+ with open(path2, 'w') as f:
+   json.dump(j, f, indent=2)
+   if verbose: print('Saved new file as: ', path2)
+ return path2
+
+
+def AddSFfromJsonPOG(extLepSF, path):
+  path = FixJsonMuonPOG(path)
+  extLepSF.add_weight_sets(["* * %s"%path])
+  return
+
+
+###########################################################
 extLepSF = lookup_tools.extractor()
 
+
+## Muon POG
+AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.json'))
+AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json'))
+
+
+'''
 # Electron reco
 extLepSF.add_weight_sets(["ElecRecoSFb20_2016 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2016/el_scaleFactors_gsf_ptLt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSF_2016 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2016/el_scaleFactors_gsf_ptGt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSFb20_2017 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2017/el_scaleFactors_gsf_ptLt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSF_2017 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2017/el_scaleFactors_gsf_ptGt20.root')])
-extLepSF.add_weight_sets(["ElecRecoSF_2018 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2018/el_scaleFactors_gsf.root')])
 extLepSF.add_weight_sets(["ElecRecoSFb20_2016_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2016/el_scaleFactors_gsf_ptLt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSF_2016_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2016/el_scaleFactors_gsf_ptGt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSFb20_2017_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2017/el_scaleFactors_gsf_ptLt20.root')])
 extLepSF.add_weight_sets(["ElecRecoSF_2017_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2017/el_scaleFactors_gsf_ptGt20.root')])
-extLepSF.add_weight_sets(["ElecRecoSF_2018_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2018/el_scaleFactors_gsf.root')])
 
 # Electron loose
 extLepSF.add_weight_sets(["ElecLooseSF_2016 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/loose/elec/TnP_loose_ele_2016.root')])
@@ -74,16 +108,6 @@ extLepSF.add_weight_sets(["MuonTightSF_2016_er EGamma_SF2D_error %s"%cafea_path(
 extLepSF.add_weight_sets(["MuonTightSF_2017_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/tight/muon/egammaEff2017_EGM2D.root')])
 extLepSF.add_weight_sets(["MuonTightSF_2018_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/tight/muon/egammaEff2018_EGM2D.root')])
 
-# 5.02 TeV
-extLepSF.add_weight_sets(["MuonTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
-extLepSF.add_weight_sets(["MuonTightSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
-extLepSF.add_weight_sets(["MuonLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_recotolooseSF.root')])
-extLepSF.add_weight_sets(["MuonLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_recotolooseSF.root')])
-extLepSF.add_weight_sets(["ElecTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_loosetotightSF.root')])
-extLepSF.add_weight_sets(["ElecTightSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_loosetotightSF.root')])
-extLepSF.add_weight_sets(["ElecLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
-extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
-
 # Fake rate 
 # todo: check that these are the same as the "recorrected"
 for year in [2016, 2017, 2018]:
@@ -94,6 +118,25 @@ for year in [2016, 2017, 2018]:
 # Flip rates                                                                                                                                                                                                       
 for year in [2016, 2017, 2018]:
   extLepSF.add_weight_sets([("EleFlip_{year} chargeMisId %s"%cafea_path(basepathFromTTH+'fliprates/ElectronChargeMisIdRates_era{year}_2020Feb13.root')).format(year=year,syst=syst)])
+'''
+
+# Elec reco
+extLepSF.add_weight_sets(["ElecRecoSF_2018 EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2018/el_scaleFactors_gsf.root')])
+extLepSF.add_weight_sets(["ElecRecoSF_2018_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/reco/elec/2018/el_scaleFactors_gsf.root')])
+
+# Elec MVA POG
+extLepSF.add_weight_sets(["ElecMVA80_2018 EGamma_SF2D %s"%cafea_path("data/ElecSF/2018_ElectronMVA80.root")])
+extLepSF.add_weight_sets(["ElecMVA80_2018_er EGamma_SF2D_error %s"%cafea_path("data/ElecSF/2018_ElectronMVA80.root")])
+
+# 5.02 TeV
+extLepSF.add_weight_sets(["MuonTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
+extLepSF.add_weight_sets(["MuonTightSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
+extLepSF.add_weight_sets(["MuonLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_recotolooseSF.root')])
+extLepSF.add_weight_sets(["MuonLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_recotolooseSF.root')])
+extLepSF.add_weight_sets(["ElecTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_loosetotightSF.root')])
+extLepSF.add_weight_sets(["ElecTightSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_loosetotightSF.root')])
+extLepSF.add_weight_sets(["ElecLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
+extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
 
 extLepSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
@@ -149,11 +192,60 @@ def AttachElectronSF(electrons, year=2018):
 
 
 
+def AttachMuonPOGSFs(muons):
+  isoname = 'NUM_TightRelIso_DEN_MediumPromptID'
+  idname = 'NUM_MediumPromptID_DEN_TrackerMuons'
+  nomtag = 'abseta_pt_value'
+  stattag = 'abseta_pt_stat'
+  systtag = 'abseta_pt_syst'
+  eta = np.abs(muons.eta)
+  pt = muons.pt
+
+  ### ID
+  IDnom  = SFevaluator[idname+'/'+nomtag ](eta, pt)
+  IDstat = SFevaluator[idname+'/'+stattag](eta, pt)
+  IDsyst = SFevaluator[idname+'/'+systtag](eta, pt)
+
+  ISOnom  = SFevaluator[isoname+'/'+nomtag ](eta, pt)
+  ISOstat = SFevaluator[isoname+'/'+stattag](eta, pt)
+  ISOsyst = SFevaluator[isoname+'/'+systtag](eta, pt)
+  
+  nom = IDnom*ISOnom
+  tot = np.sqrt(sum([x*x for x in [IDstat, ISOstat, IDsyst, ISOsyst]]))
+
+  muons['sf_nom'] = nom
+  muons['sf_hi']  = nom+tot
+  muons['sf_lo']  = nom-tot
+
+
+def AttachElecPOGSFs(electrons):
+  # eta = np.abs(electrons.eta)
+  eta = electrons.eta
+  pt = electrons.pt
+  reco_sf          = SFevaluator['ElecRecoSF_{year}'.format(year=year)](eta,pt)
+  reco_sf_err      = SFevaluator['ElecRecoSF_{year}_er'.format(year=year)](eta,pt)
+  id_sf            = SFevaluator['ElecMVA80_{year}'.format(year=year)](eta,pt)
+  id_sf_err        = SFevaluator['ElecMVA80_{year}_er'.format(year=year)](eta,pt)
+
+  electrons['sf_nom'] = reco_sf * id_sf
+  err = np.sqrt(reco_sf_err*reco_sf_err/2 + id_sf_err*id_sf_err/2)
+  electrons['sf_hi']  = electrons['sf_nom'] + err
+  electrons['sf_lo']  = electrons['sf_nom'] - err
 
 
 
 
 
+
+
+
+
+
+
+
+
+########################################################################################
+### Trigger
 def LoadTriggerSF(year, ch='2l', flav='em'):
   pathToTriggerSF = cafea_path('data/triggerSF/triggerSF_%s.pkl.gz'%year)
   with gzip.open(pathToTriggerSF) as fin: hin = pickle.load(fin)
@@ -168,6 +260,10 @@ def LoadTriggerSF(year, ch='2l', flav='em'):
   return [GetTrig, GetTrigDo, GetTrigUp]
 
 def GetTriggerSF(year, events, lep0, lep1):
+  events['trigger_sf']    = np.ones_like(year, dtype=float)
+  events['trigger_sfDown']= events['trigger_sf'] - 0.01
+  events['trigger_sfUp']  = events['trigger_sf'] + 0.01
+  return
   ls=[]
   for syst in [0,1,2]:
     #2l
@@ -180,7 +276,6 @@ def GetTriggerSF(year, events, lep0, lep1):
   events['trigger_sf']=ls[0] #nominal
   events['trigger_sfDown']=ls[0]-np.sqrt(ls[1]*ls[1]+0.01*0.01) # place holder: 1% systematic unc.
   events['trigger_sfUp']=ls[0]+np.sqrt(ls[2]*ls[2]+0.01*0.01) # place holder: 1% systematic unc.
-
 
 
 
@@ -207,7 +302,7 @@ def GetFTriggerSF5TeV(path, ch='m'):
   GetTrigDo = lookup_tools.dense_lookup.dense_lookup(do   , [hu.axis('pt').edges(), hu.axis('abseta').edges()])
   return [GetTrig, GetTrigDo, GetTrigUp]
 
-path_trigSF5TeV = cafea_path('data/triggerSFs/5TeV/triggerSFs.pkl.gz')
+path_trigSF5TeV = cafea_path('data/triggerSF/5TeV/triggerSFs.pkl.gz')
 GetElecTrigSF5TeV, GetElecTrigSF5TeVDown, GetElecTrigSF5TeVUp = GetFTriggerSF5TeV(path_trigSF5TeV, 'e')
 GetMuonTrigSF5TeV, GetMuonTrigSF5TeVDown, GetMuonTrigSF5TeVUp = GetFTriggerSF5TeV(path_trigSF5TeV, 'm')
 def GetTriggerSF5TeV(pt, eta, ch='e'):
@@ -216,6 +311,25 @@ def GetTriggerSF5TeV(pt, eta, ch='e'):
   SFdo = GetElecTrigSF5TeVDown(pt, eta) if ch=='e' else GetMuonTrigSF5TeVDown(pt, eta)
   SFup = GetElecTrigSF5TeVUp  (pt, eta) if ch=='e' else GetMuonTrigSF5TeVUp  (pt, eta)
   return [SFs, SFs+SFdo, SFs+SFup]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###### Btag scale factors
 ################################################################
@@ -310,8 +424,33 @@ def GetTriggerSF5TeV(pt, eta, chan):
   GetDataEff = LoadTriggerSFs5TeV('SingleMuon, HighEGJet')
   return np.array(GetDataEff(pt, eta, chan))/np.array(GetMCEff(pt, eta, chan))
 '''
-pt = np.array([25, 60.3, 154.4])
-eta = np.array([-2.3, 0.2, 2.1])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###### Pileup reweighing
 ##############################################
@@ -421,8 +560,6 @@ met_factory = CorrectedMETFactory(name_map)
 # test
 #val = evaluator['MuonTightSF_2016'](np.array([1.2, 0.3]),np.array([24.5, 51.3]))
 #print('val = ', val)
-
-
 
 
 

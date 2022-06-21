@@ -15,8 +15,17 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   #AddLabel(self, x, #y, text, options={}):
   plt.SetRegion(label)
   plt.SetOutput(output)
+
+  b0 = None; bN = None
+  if   var == 'deltaphi':
+    b0 = 2
+  elif var == 'invmass':
+    b0 = 2
+
+  if b0 is not None:
+    plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
-  plt.SetSystematics(syst=['lepSF', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  plt.SetSystematics(syst=['eleceff', 'muoneff', 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
   #plt.PrintYields('counts')

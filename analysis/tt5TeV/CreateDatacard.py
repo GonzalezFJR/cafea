@@ -1,7 +1,7 @@
 from config import *
 #from PDFscaleUncertainties import *
 
-from topcoffea.modules.CreateDatacardFromRootfile import Datacard
+from cafea.modules.CreateDatacardFromRootfile import Datacard
 outpath = '/nfs/fanae/user/juanr/CMSSW_10_2_13/src/tt5TeV/ljets/15jun2022/'
 fname = path
 

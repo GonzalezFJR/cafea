@@ -1,7 +1,7 @@
 from numpy import sqrt
-from topcoffea.plotter.plotter import GetSystListForHisto
-from topcoffea.plotter.OutText import OutText
-from topcoffea.plotter.Uncertainties import GetStringNumUnc as NU
+from cafea.plotter.plotter import GetSystListForHisto
+from cafea.plotter.OutText import OutText
+from cafea.plotter.Uncertainties import GetStringNumUnc as NU
 
 def squaresum(*vals):
   return sqrt(sum([x*x for x in vals]))

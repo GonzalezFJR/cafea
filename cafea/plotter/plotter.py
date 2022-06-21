@@ -11,8 +11,8 @@ import coffea
 from coffea import hist, processor
 from coffea.hist import plot, Hist
 from cycler import cycler
-from topcoffea.plotter.OutText import OutText
-from topcoffea.plotter.Uncertainties import *
+from cafea.plotter.OutText import OutText
+from cafea.plotter.Uncertainties import *
 
 def StackOverUnderflow(v, overflow):
   if overflow=='all':

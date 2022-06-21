@@ -2,7 +2,7 @@
 
 from config import *
 from QCD import *
-from topcoffea.modules.fileReader import *
+from cafea.modules.fileReader import *
 
 if var is None: var = 'minDRjj'
 

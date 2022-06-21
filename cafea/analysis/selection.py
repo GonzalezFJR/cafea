@@ -189,9 +189,15 @@ def AddSFs(events, leps):
   events['sf_1l_hi'] = ak.fill_none(padded_leps_1[:,0].sf_hi, 1)
   events['sf_1l_lo'] = ak.fill_none(padded_leps_1[:,0].sf_lo, 1)
 
+def PadSFs2leps(events, leps, name):
+  padded_leps_2 = ak.pad_none(leps, 2)
+  events[name      ] = ak.fill_none(padded_leps_2[:,0].sf_nom, 1)*ak.fill_none(padded_leps_2[:,1].sf_nom, 1)
+  events[name+'_hi'] = ak.fill_none(padded_leps_2[:,0].sf_hi, 1) *ak.fill_none(padded_leps_2[:,1].sf_hi, 1)
+  events[name+'_lo'] = ak.fill_none(padded_leps_2[:,0].sf_lo, 1) *ak.fill_none(padded_leps_2[:,1].sf_lo, 1)
+  
+
 # 2l selection (we do not make the ss requirement here)
 def add2lMaskAndSFs(events, year, isData, sampleType):
-
     # FOs and padded FOs
     FOs = events.l_fo_conept_sorted
     padded_FOs = ak.pad_none(FOs,2)

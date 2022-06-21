@@ -1,6 +1,6 @@
 # Create datacard from simple "combine" rootfile, using uproot
 # Usage: 
-#   python topcoffea/modules/CreateDatacardFromRootfile.py NBtags.root -s tt -b "tW, WJets, QCD, DY" -l 0.015 --bkgUnc "0.2, 0.2, 0.2, 0.2" -u "lepSF, trigSF, btagSF, FSR, ISR" -o test.dat
+#   python cafea/modules/CreateDatacardFromRootfile.py NBtags.root -s tt -b "tW, WJets, QCD, DY" -l 0.015 --bkgUnc "0.2, 0.2, 0.2, 0.2" -u "lepSF, trigSF, btagSF, FSR, ISR" -o test.dat
 import uproot, os
 
 class Datacard:

@@ -13,11 +13,11 @@ from optparse import OptionParser
 from coffea.analysis_tools import PackedSelection
 from coffea.lumi_tools import LumiMask
 
-from topcoffea.modules.GetValuesFromJsons import get_param
-from topcoffea.modules.objects import *
-from topcoffea.modules.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetTriggerSF, GetPUSF
-from topcoffea.modules.selection import *
-from topcoffea.modules.paths import topcoffea_path
+from cafea.modules.GetValuesFromJsons import get_param
+from cafea.analysis.objects import *
+from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetPUSF, AttachMuonPOGSFs, AttachElecPOGSFs, GetTriggerSF
+from cafea.analysis.selection import *
+from cafea.modules.paths import cafea_path
 
 doSyst = True
 
@@ -30,9 +30,9 @@ def AttachTrigSF(e0, m0, events):
   TrigSFm   = np.nan_to_num(ak.flatten(ak.fill_none(TrigSFm, 1.)), nan=1)
   TrigSFmdo = np.nan_to_num(ak.flatten(ak.fill_none(TrigSFmdo, 1.)), nan=1)
   TrigSFmup = np.nan_to_num(ak.flatten(ak.fill_none(TrigSFmup, 1.)), nan=1)
-  events['sf_trig']    = TrigSFe*TrigSFm
-  events['sf_trig_hi'] = TrigSFeup*TrigSFmup
-  events['sf_trig_lo'] = TrigSFedo*TrigSFmdo
+  events['trigger_sf']    = TrigSFe*TrigSFm
+  events['trigger_sfUp'] = TrigSFeup*TrigSFmup
+  events['trigger_sfDown'] = TrigSFedo*TrigSFmdo
 
 class AnalysisProcessor(processor.ProcessorABC):
     def __init__(self, samples):
@@ -56,6 +56,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         'meta'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("meta", "Muon $\eta$ ", 10, -2.5, 2.50)),
         'j0pt'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("j0pt",  "Leading jet $p_{T}$ (GeV)", 10, 0, 300)),
         'j0eta'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("j0eta", "Leading jet $\eta$ ", 12, -2.5, 2.50)),
+        'deltaphi'   : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("deltaphi","$\Delta\\varphi (e\mu)$ (rad/$\pi$)", 10, 0, 1)),
         'invmass'    : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("invmass", "$m_{\ell\ell}$ (GeV) ", 20, 0, 300)),
         'invmass2'   : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("invmass2", "$m_{\ell\ell}$ (GeV) ", 30, 75, 105)),
         'invmass_bb' : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("invmass", "$m_{\ell\ell}$ (GeV) ", 30, 75, 105)),
@@ -88,7 +89,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         doPDFunc = "sumPDFWeights" in self._samples[dataset]
 
         # Golden JSON !
-        # golden_json_path = topcoffea_path("data/goldenJsons/Cert_306546-306826_5TeV_EOY2017ReReco_Collisions17_JSON.txt")
+        # golden_json_path = cafea_path("data/goldenJsons/Cert_306546-306826_5TeV_EOY2017ReReco_Collisions17_JSON.txt")
 
         if doPDFunc:
           sowPDF       = self._samples[dataset]["sumPDFWeights"]
@@ -117,22 +118,25 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
         # Muon selection
-        mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumPromptId, mu.btagDeepB, ptCut=20, etaCut=2.4)
-        mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        #mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumPromptId, mu.btagDeepB, ptCut=20, etaCut=2.4)
+        #mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        mu['isGood'] = isMuonPOGM(mu, ptCut=20)
 
         # Electron selection
-        e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaFall17V2noIso_WPL, 20, 2.4)
-        e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        #e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaFall17V2noIso_WPL, 20, 2.4)
+        #e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        e['isGood'] = isElectronMVA(e, ptCut=20)
 
         # Build loose collections
-        m_sel = mu[mu.isLoose & mu.isMVA]
-        e_sel = e[e.isLoose & e.isMVA]
+        m_sel = mu[mu.isGood] #mu[mu.isLoose & mu.isMVA]
+        e_sel = e[e.isGood] #e[e.isLoose & e.isMVA]
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
         llpairs = ak.combinations(l_sel, 2, fields=["l0","l1"])
         mll = (llpairs.l0+llpairs.l1).mass # Invmass for leading two leps
+        deltaphi = (llpairs.l0.delta_phi(llpairs.l1))/np.pi
 
         l_sel_padded = ak.pad_none(l_sel, 2)
         l0 = l_sel_padded[:,0]
@@ -140,13 +144,17 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         ### Attach scale factors
         if not isData:
-          AttachElectronSF(e_sel,year='2018')
-          AttachMuonSF(m_sel,year='2018') #5TeV
+          #AttachElectronSF(e_sel,year='2018')
+          #AttachMuonSF(m_sel,year='2018') #5TeV
+          AttachMuonPOGSFs(m_sel)
+          AttachElecPOGSFs(e_sel)
           #AttachTrigSF(e0, m0, events)
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
         if not isData:
-          AddSFs(events, l_sel)
+          #AddSFs(events, l_sel)
+          PadSFs2leps(events, e_sel, "elecsf")
+          PadSFs2leps(events, m_sel, "muonsf")
 
         events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1)
         events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0)
@@ -222,7 +230,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         weights_dict = coffea.analysis_tools.Weights(len(events),storeIndividual=True)
         weights_dict.add("norm",genw if isData else (xsec/sow)*genw)
         if not isData: # Apply SFs
-          weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
+          #weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
+          weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
+          weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
           weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
           weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
         # PS = ISR, FSR (on ttPS only)
@@ -238,7 +248,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Add systematics
         systList = ["norm"]
         systJets = ['JESUp', 'JESDo']
-        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+        #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+        if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst: systList = ["norm"]
 
@@ -270,6 +281,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         mllvalues = ak.flatten(mllvalues, axis=1)
         selections.add("offZ",   ( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
+        selections.add("mll", ( (mllvalues>20)))
 
         if not isData: # JES systematics
           njetsJESUp = (ak.num(goodJetsJESUp))
@@ -296,7 +308,7 @@ class AnalysisProcessor(processor.ProcessorABC):
          for ch in channels:
           if syst == "norm":
             for lev in ['0jet', '1jet', '2jet', '3jet', 'g4jet']:
-              cuts = [ch] + [lev] + ['OS']
+              cuts = [ch] + [lev] + ['mll'] + ['OS']
               cut   = selections.all(*cuts)
               weights = weights_dict.weight(None)
               weights = weights[cut]
@@ -304,7 +316,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
               hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
           for lev in levels:
-            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')]
+            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll']
             cutsOS = cuts + ['OS']
             cutsSS = cuts + ['SS']
             cut   = selections.all(*cutsOS)
@@ -315,6 +327,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             weightsSS = weights[cutSS]
             weights = weights[cut]
             mll_flat = mllvalues[cut]
+            #deltaphi_cut = deltaphi[cut]
             lep0pt = ak.flatten(llpairs.l0.pt[cut])
             lep0eta = ak.flatten(llpairs.l0.eta[cut])
             jet0pt  = ak.flatten(j0.pt[cut])
@@ -323,6 +336,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cutSS], syst=syst, sign='SS', weight=weightsSS)
             hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cut], syst=syst, weight=weights)
             hout['ht'].fill(sample=histAxisName, channel=ch, level=lev, ht=ht[cut], syst=syst, weight=weights)
+            hout['deltaphi'].fill(sample=histAxisName, channel=ch, level=lev, deltaphi=ak.flatten(deltaphi[cut]), syst=syst, weight=weights)
             hout['met'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cut], syst=syst, weight=weights)
             hout['l0pt'] .fill(sample=histAxisName, channel=ch, level=lev, l0pt=ak.flatten(llpairs.l0.pt[cut]), syst=syst, sign='OS', weight=weights)
             hout['l0eta'].fill(sample=histAxisName, channel=ch, level=lev, l0eta=ak.flatten(llpairs.l0.eta[cut]), syst=syst, sign='OS', weight=weights)

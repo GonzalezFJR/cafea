@@ -50,8 +50,23 @@ def Nonprompt(plt, level='g2jets', save=False):
 
   return NOS, NOS_e
 
+def DrawNonprompt(p, var='l0pt', level=level, chan=ch):
+  categories = {'level':level, 'sign':'SS', 'channel':chan}
+  p.SetRatio(True)
+  p.SetOutpath(outpatho)
+  p.plotData = True
+  p.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
+  p.SetDataName('Pseudodata')
+  label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
+  p.SetRegion(label)
+  p.SetOutput(output)
+  p.SetSystematics(syst=['lepSF', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  p.Stack(var, xtit='', ytit='', dosyst=True)
+
+
 
 if __name__ == '__main__':
   Nonprompt(p, level=level, save=True)
+  DrawNonprompt(p, 'l0pt')
 
 

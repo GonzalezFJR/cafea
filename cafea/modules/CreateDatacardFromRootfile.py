@@ -2,9 +2,26 @@
 # Usage: 
 #   python cafea/modules/CreateDatacardFromRootfile.py NBtags.root -s tt -b "tW, WJets, QCD, DY" -l 0.015 --bkgUnc "0.2, 0.2, 0.2, 0.2" -u "lepSF, trigSF, btagSF, FSR, ISR" -o test.dat
 import uproot, os
+import numpy as np
+from coffea import hist, processor
+
+def RmNegBins(fname, overwrite=True):
+  f = uproot.open(fname)
+  for k in f:
+    vals, bins = f[k].to_numpy(flow=False) 
+    if np.any(vals<0): 
+      vals = np.where(vals>0, vals, 0)
+      h = f[k].to_hist()
+      hist.export1d(h)
+  exit()
+
+
+
 
 class Datacard:
-  def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None):
+  def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, rmNegBins=True):
+    if rmNegBins:
+      RmNegBins(fname, overwrite=True)
     self.LoadFile(fname)
     self.SetSignal(signal)
     self.SetBkg(bkgList)

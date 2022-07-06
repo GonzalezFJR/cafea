@@ -487,7 +487,7 @@ def GetSystListForHisto(h, systAxisName="syst", normLabel='norm', stat=False):
     if not s in systList: systList.append(s)
   return systList
   
-def GetAsimov(histo, processes=None, prname='process'):
+def GetAsimov(histo, processes=None, prname='process', integrateAxis=True):
   if processes is None:
     processes = [x.name for x in histo.identifiers(prname)]
     if 'data' in processes: 
@@ -495,8 +495,7 @@ def GetAsimov(histo, processes=None, prname='process'):
   var = [x.name for x in histo.dense_axes()][0]
   return histo.integrate(prname, processes)
   h = histo.group(prname, hist.Cat(prname, prname), {'asimov': processes})
-  h1d = h.integrate('process','asimov')
-  return h1d
+  return h.integrate('process','asimov') if integrateAxis else h1d
   '''
   bins, values = GetXYfromH1D(h1d, axis=var, mode='centers', errors=False, overflow=False)
   print('values h1d = ', values)
@@ -511,7 +510,7 @@ def GetAsimov(histo, processes=None, prname='process'):
   return newh.integrate("process", "asimov")
   '''
 
-def GetPseudodata(histo, processes=None):
+def GetPseudodata(histo, processes=None, integrateAxis=True):
   ''' Only one sparse axes for processes, please '''
   prname = [x.name for x in histo.sparse_axes()][0]
   var = [x.name for x in histo.dense_axes()][0]
@@ -527,7 +526,7 @@ def GetPseudodata(histo, processes=None):
   newh = h.copy(content=False)
   newh.fill(**{'weight' : np.ones_like(datafill), var : np.array(datafill), 'process':'Pseudodata'})
   #print('Getting pseudodata')
-  return newh.integrate("process", "Pseudodata")
+  return newh.integrate("process", "Pseudodata") if integrateAxis else newh
 
 def GroupKeepOrder(histo, grouplists):
   # grouptuple = [[old_axis, new_axis, dict]]
@@ -809,8 +808,6 @@ class plotter:
     ''' Returns a histogram with all categories contracted '''
     if categories == None: categories = self.categories
     h = self.hists[hname]
-    for cat in categories: 
-      h = h.integrate(cat, categories[cat])
     if isinstance(process, str) and ',' in process: process = process.split(',')
     if isinstance(process, list): 
       prdic = {}
@@ -819,6 +816,8 @@ class plotter:
     elif isinstance(process, str): 
       h = h[process]#.sum("process")
       if removeProcessAxis: h = h.sum("process")
+    for cat in categories: 
+      h = h.integrate(cat, categories[cat])
     #self.SetRebin(rebin)
     #if self.rebin is not None:
     #  h = Rebin(h, hname, self.rebin)
@@ -940,14 +939,14 @@ class plotter:
     fout.close()
 
 
-  def GetData(self, hname, h=None):
+  def GetData(self, hname, h=None, integrateAxis=True):
     if   self.dataName.lower() == 'pseudodata': 
       if h is None: print("ERROR: we need a histogram to create pseudodata!")
-      hData = GetPseudodata(h)
+      hData = GetPseudodata(h, integrateAxis=integrateAxis)
       dataLabel = 'Pseudodata'
     elif self.dataName.lower() == 'asimov':
       if h is None: print("ERROR: we need a histogram to create an Asimov!")
-      hData = GetAsimov(h)
+      hData = GetAsimov(h, integrateAxis=integrateAxis)
       dataLabel = 'Asimov'
     else: 
       hData = self.GetHistogram(hname, self.dataName)
@@ -972,8 +971,11 @@ class plotter:
 
     # Deal with processes and other inputs
     self.doRatio = doRatio
-
-    N = len(var) if isinstance(var, list) else (len(process) if isinstance(process, list) else (len(selection) if isinstance(selection, list) else 0))
+ 
+    N1 = len(var)       if isinstance(var,       list) else 1
+    N2 = len(process)   if isinstance(process,   list) else 1
+    N3 = len(selection) if isinstance(selection, list) else 1
+    N = max([N1, N2, N3])
     if N<=1:
       print('ERROR: var, process or selection must be a list with at least two elements')
       return
@@ -996,7 +998,12 @@ class plotter:
     else:
       fig, ax = plt.subplots(1, 1, figsize=(7,7))#, gridspec_kw={"height_ratios": (3, 1)}, sharex=True)
 
-    hmain = self.GetHistogram(var[0], process[0], selection[0])
+    #selection[0]['process'] = process
+    hmain = self.GetHistogram(var[0], process[0], selection[0])#, process[0],{})# selection[0])
+    #print('var = ', var[0], ', process = ', process[0], ', selection = ', selection[0])
+    #print(hmain)
+    #PrintHisto(hmain)
+    #print(hmain.values())
     hmain.scale(scale[0])
     hist.plot1d(hmain, ax=ax, clear=False, line_opts={'color':color[0]})
     histograms = [hmain]
@@ -1038,7 +1045,7 @@ class plotter:
 
     if not self.region is None:
       lab = plt.text(0.03, .98, self.region, fontsize=16, horizontalalignment='left', verticalalignment='top', transform=ax.transAxes)
-      ax.set_ylim(0,ax.get_ylim()[1]*1.1)
+      if not self.doLogY: ax.set_ylim(0,ax.get_ylim()[1]*1.1)
     
     # Save
     os.system('mkdir -p %s'%self.outpath)
@@ -1115,7 +1122,7 @@ class plotter:
     if ybkg == {}: return #process not found
     ybkg = ybkg[list(ybkg.keys())[0]]
     ybkgmax = max(ybkg)
-    hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None, binwnorm=binwnorm)
+    hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
@@ -1142,9 +1149,10 @@ class plotter:
     
     if self.doData(hname) and self.doRatio:
       #hist.plotratio(hData, h.sum("process"), clear=False,ax=rax, error_opts=data_err_opts, denom_fill_opts={}, guide_opts={}, unc='num')
-      hist.plotratio(hData, h.sum("process"), clear=False,ax=rax, error_opts=data_err_opts, denom_fill_opts={'alpha':0, 'color':'none'}, guide_opts={}, unc='num')
+      hist.plotratio(hData, h.sum("process"), clear=False,ax=rax, error_opts=data_err_opts, denom_fill_opts= {'alpha':0, 'color':'none'} if drawSystBand else {}, guide_opts={}, unc='num')
       rax.set_ylabel(self.yRatioTit)
       rax.set_ylim(self.ratioRange[0], self.ratioRange[1])
+      if xtit!='' and xtit is not None: rax.set_xlabel(xtit)
     elif not self.doRatio:
       ax.set_xlabel(xtit)
 
@@ -1163,8 +1171,6 @@ class plotter:
       else:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, hatch="\/\/", color="gray")
 
-
-
     # Labels
     CMS  = plt.text(0., 1., r"$\bf{CMS}$ Preliminary", fontsize=16, horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
     lumi = plt.text(1., 1., r"%1.0f %s (%s)"%(self.lumi, self.lumiunit, self.sqrts), fontsize=20, horizontalalignment='right', verticalalignment='bottom', transform=ax.transAxes)
@@ -1179,6 +1185,7 @@ class plotter:
     os.system('mkdir -p %s'%self.outpath)
     if self.output is None: self.output = hname
     fig.savefig(os.path.join(self.outpath, self.output+'.png'))
+    fig.savefig(os.path.join(self.outpath, self.output+'.pdf'))
     print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
     plt.close('all')
     #else: fig.savefig(os.path.join(self.outpath, hname+'_'+'_'.join(self.region.split())+'.png'))

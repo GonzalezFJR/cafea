@@ -399,17 +399,53 @@ def get_Z_peak_mask(lep_collection,pt_window):
 def GetJetVariables(jets):
   jj_pairs = ak.combinations(jets, 2, fields=["j0","j1"])
   bjets = jets[(jets.isBtag)]
-  ujets = jets[(jets.isBtag==0)]
-  uu_pairs = ak.combinations(ujets, 2, fields=["j0", "j1"])
+  #ujets = jets[(jets.isBtag==0)]
+  #uu_pairs = ak.combinations(ujets, 2, fields=["j0", "j1"])
   mjj = (jj_pairs.j0+jj_pairs.j1).mass
   ptjj = (jj_pairs.j0+jj_pairs.j1).pt
   dR = jj_pairs.j0.delta_r(jj_pairs.j1)
+
+  # Median DR between jets
+  dRsort = dR[ak.argsort(dR, axis=-1,ascending=False)]
+  medianIndices = np.array(np.ceil( (ak.num(dRsort)-1)/2 ), dtype=int)
+  allIndices = ak.local_index(dRsort)
+  indexmask = (allIndices == medianIndices)
+  dRmedian = dRsort[indexmask]
+
+  # vars for jets with min DR
   args = ak.singletons(ak.argmin(dR, axis=1))
   dR = dR[args]
-  mjj = (mjj[args])
-  ptjj = ptjj[args]
+  mjjmindr = (mjj[args])
+  ptjjmindr = ptjj[args]
   j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
-  return j0, dR, mjj, ptjj
+
+  return j0, dR, dRmedian, mjjmindr, ptjjmindr
+
+def GetJetLepVar(jets, leps):
+  btags = jets[jets.isBtag]
+  jvec = ak.with_name(jets , 'PtEtaPhiMLorentzVector').pvec
+  lvec = ak.with_name(leps , 'PtEtaPhiMLorentzVector').pvec
+  bvec = ak.with_name(btags, 'PtEtaPhiMLorentzVector').pvec
+  jetsum = ak.sum(jvec, axis=-1)
+  lepsum = ak.sum(lvec, axis=-1)
+  vall = ak.concatenate([jvec, lvec], axis=1)
+  vlbb = ak.concatenate([bvec, lvec], axis=1)
+  sumall = ak.sum(vall, axis=-1)
+  sumlbb = ak.sum(vlbb, axis=-1)
+  getpt = lambda v : np.sqrt(v.x*v.x + v.y*v.y)
+  ptSumVecAll = getpt(sumall)
+  ptSumVeclb  = getpt(sumlbb)
+  st = ak.sum(jets.pt, axis=-1) + ak.sum(leps.pt, axis=-1)
+  btags['charge'] = np.zeros_like(btags.pt, dtype=int) # charge = 0 just to distinguish from leptons
+  lb = ak.concatenate([leps, btags], axis=1)
+  lbpairs = ak.combinations(lb, 2, fields=["p1","p2"])
+  blmask = np.abs(lbpairs.p1.charge+lbpairs.p2.charge) ==1 # Good pairs formed by btags + leps
+  lbpairs = lbpairs[blmask]
+  dphi = lambda a,b : (a - b + np.pi) % (2 * np.pi) - np.pi # https://github.com/CoffeaTeam/coffea/blob/7dd4f863837a6319579f078c9e445c61d9106943/coffea/nanoevents/methods/vector.py#L66
+  dr = lambda p : np.hypot( p.p1.eta - p.p2.eta, dphi(p.p1.phi, p.p2.phi))
+  dRlb = dr(lbpairs)
+  dRlb = dRlb[ak.argmin(dRlb,axis=-1,keepdims=True)]
+  return ptSumVecAll, ptSumVeclb, dRlb, st
 
 def GetMT(lepton, met):
     ''' Transverse mass with met and lepton '''

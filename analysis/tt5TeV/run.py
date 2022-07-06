@@ -17,6 +17,7 @@ from coffea.nanoevents import NanoAODSchema
 import tt5TeV
 from cafea.modules import samples
 from cafea.modules import fileReader
+import nn.NN
 
 # submit: sbatch -p batch -c 60 --wrap "python analysis/tt5TeV/run.py cafea/json/5TeV/data/HighEGJet.json -n 58 -o HighEGJet"
 
@@ -141,7 +142,11 @@ if __name__ == '__main__':
     print('pretending...')
     exit() 
 
-  processor_instance = tt5TeV.AnalysisProcessor(samplesdict)
+
+  pathToModel = 'analysis/tt5TeV/nn/models/model_04Jul22_07h04m.pkl'
+  with open(pathToModel, 'rb') as f:
+    model = pickle.load(f)
+  processor_instance = tt5TeV.AnalysisProcessor(samplesdict, model)
 
   # Run the processor and get the output
   tstart = time.time()

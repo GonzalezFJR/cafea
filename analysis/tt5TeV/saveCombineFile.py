@@ -5,6 +5,7 @@ from QCD import *
 from cafea.modules.fileReader import *
 
 if var is None: var = 'minDRjj'
+lumi = 27.4
 
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
 name = GetFileNameFromPath(path)
@@ -14,7 +15,7 @@ hQCD = qcd.GetQCD(var)
 hdampup,hdampdo = GetModSystHistos(path, 'TT_hdamp', 'hdamp', var=var)
 tuneup , tunedo = GetModSystHistos(path, 'TT_UE', 'UE', var=var)
 plt.AddExtraBkgHist([hQCD, hdampup, hdampdo, tuneup, tunedo], add=True)
-plt.SetOutpath('./combineFiles/')
+plt.SetOutpath('./combineFiles_27p4invpb/')
 if not doData:
   plt.SetDataName('Asimov')
 RebinVar(plt, var)

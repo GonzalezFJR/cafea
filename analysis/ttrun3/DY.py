@@ -9,15 +9,55 @@ peak = 'invmass2'
 plt = plotter(path, prDic=prdic, colors=colordic, lumi=lumi)
 plt.SetDataName('pseudodata')
 
-def GetYieldPlt(plotter, chan='ee', level='dilep', process='DY', var='invmass'):
+def DrawDY(var='invmass', chan=ch, level=level, doLog=True):
+  # Background from em data
+  categories = {'channel':chan, 'level':level, 'syst':'norm'}
+  if isinstance(chan, list): chan = chan[0]
+  datname = "$0.5\\times k_{\ell\ell}\\times \mathrm{e}\mu$ data"
+  
+  # Get data estimate in the peak
+  res = DYDD(plt, level=level, save=False)
+  hem = GetDYhist(plt, 'em', level, 'data', var, integrateAxis=False)
+  kll, kllerr = res['kll'][chan]
+  hem.scale(kll*0.5)
+  hem = hem.group("process", hist.Cat("process", "process"), {datname:'Pseudodata'})
+
+  p = plotter(path, {'Drell-Yan': 'DYJetsToLL_M50, DY_M10to50'}, bkgList=['Drell-Yan'], colors={'Drell-Yan':'#3b78cb', datname:'#c6c3b0'}, lumi=lumi, var=var)
+  p.SetDataName('Pseudodata')
+  if doLog: p.SetLogY()
+  p.plotData = True
+  p.SetRatio(True)
+  p.SetOutpath(outpatho)
+  p.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
+  p.SetCategories(categories)
+  label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
+  #p.SetRebin(var, 2)
+  p.SetRegion(label)
+  output = 'DYDD_%s_%s_%s'%(var, level, chan) + ('_log' if doLog else '') 
+  p.SetOutput(output)
+  p.AddExtraBkgHist(hem)
+  p.Stack(var, xtit='', ytit='', dosyst=True)
+
+def DrawDYall():
+  for v in ['invmass', 'invmass2']:
+    for c in ['ee', 'mm']:
+      for lev in ['dilep', 'g2jets']:
+        DrawDY(v, c, lev, 1)
+        DrawDY(v, c, lev, 0)
+
+def GetDYhist(plotter, chan='ee', level='dilep', process='DY', var='invmass', integrateAxis=True):
   categories = {'channel':chan, 'level':level, 'syst':'norm'}
   if process == 'data': 
     h = plotter.GetHistogram(var, process=None, categories=categories)
     h.scale(plotter.lumi)
-    h,_ = plt.GetData(var, h)
+    h,_ = plt.GetData(var, h, integrateAxis=integrateAxis)
   else:
     h = plotter.GetHistogram(var, process=process, categories=categories)
     h.scale(plotter.lumi)
+  return h
+
+def GetYieldPlt(plotter, chan='ee', level='dilep', process='DY', var='invmass'):
+  h = GetDYhist(plotter, chan, level, process, var)
   y, e = h.values(sumw2=True)[()]
   y = sum(y); e = sum(e)
   if process=='data' and plotter.dataName.lower() == 'pseudodata': e = np.sqrt(y)
@@ -70,6 +110,24 @@ def DYDD(plt, level='dilep', save=False):
 
   SFem   = np.sqrt(SFmm * SFee)
   SFem_e = (1./2)*SFem*np.sqrt( (SFee_e/SFee)**2 + (SFmm_e/SFmm)**2 )
+
+  ret = {}
+  ret['SF'] = {}
+  ret['SF']['ee'] = SFee, SFee_e
+  ret['SF']['mm'] = SFmm, SFmm_e
+  ret['SF']['em'] = SFem, SFem_e
+  ret['Routin'] = {}
+  ret['Routin']['ee'] = Routin_ee, Routin_ee_e 
+  ret['Routin']['mm'] = Routin_mm, Routin_mm_e 
+  ret['kll'] = {}
+  ret['kll']['ee'] = (kee, kee_e)
+  ret['kll']['mm'] = (kmm, kmm_e)
+  ret['DYin'] = {}
+  ret['DYout'] = {}
+  ret['DYin']['ee'] = DYin_ee, DYin_ee_e
+  ret['DYin']['mm'] = DYin_mm, DYin_mm_e
+  ret['DYout']['ee'] = DYout_ee, DYout_ee_e
+  ret['DYout']['mm'] = DYout_mm, DYout_mm_e
   
   if save:
     t = OutText(outpatho, 'DYDD_'+level, 'new', 'tex')
@@ -86,9 +144,11 @@ def DYDD(plt, level='dilep', save=False):
     #t.line("Drell--Yan (MC)  " + t.vsep() + "%1.1f $\pm$ %1.1f"%(, ) + t.vsep() + "%1.1f $\pm$ %1.1f"%( , ) + t.vsep() + "%1.1f $\pm$ %1.1f"%( , )  );
     #t.line("Drell--Yan (Data)" + t.vsep() + "%1.1f $\pm$ %1.1f"%( , ) + t.vsep() + "%1.1f $\pm$ %1.1f"%( , ) + t.vsep() + "%1.1f $\pm$ %1.1f"%( , )  ); t.sep()
     t.write()
-  return SFem, SFem_e
+
+  return ret
 
 if __name__ == '__main__':
-  DYDD(plt, level=level, save=True)
+  #DYDD(plt, level=level, save=True)
+  DrawDYall()
 
 

@@ -133,7 +133,7 @@ class xsec:
     lumi = self.xsecunc['lumi']
     stat = self.xsecunc['stat']
     total = sqrt(sum([x*x for x in [tots, lumi, stat]]))
-    t.line('Total systematic       ' + t.vsep() + form%(tots ) + t.vsep() + form%(tots /nom*100) + ' \%'); t.sep()
+    t.line('Total syst. unc.       ' + t.vsep() + form%(tots ) + t.vsep() + form%(tots /nom*100) + ' \%'); t.sep()
     t.line('Integrated luminosity  ' + t.vsep() + form%(lumi ) + t.vsep() + form%(lumi /nom*100) + ' \%'); t.sep()
     t.line('Statistical uncertainty' + t.vsep() + form%(stat ) + t.vsep() + form%(stat /nom*100) + ' \%'); t.sep()
     t.line('Total                  ' + t.vsep() + form%(total) + t.vsep() + form%(total/nom*100) + ' \%'); t.sep()

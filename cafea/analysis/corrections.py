@@ -128,6 +128,11 @@ extLepSF.add_weight_sets(["ElecRecoSF_2018_er EGamma_SF2D_error %s"%cafea_path(b
 extLepSF.add_weight_sets(["ElecMVA80_2018 EGamma_SF2D %s"%cafea_path("data/ElecSF/2018_ElectronMVA80.root")])
 extLepSF.add_weight_sets(["ElecMVA80_2018_er EGamma_SF2D_error %s"%cafea_path("data/ElecSF/2018_ElectronMVA80.root")])
 
+# Elec cutbased POG
+extLepSF.add_weight_sets(["ElecCBT_2018 EGamma_SF2D %s"%cafea_path("data/ElecSF/egammaEffi_Ele_Tight_EGM2D.root")])
+extLepSF.add_weight_sets(["ElecCBT_2018_er EGamma_SF2D_error %s"%cafea_path("data/ElecSF/egammaEffi_Ele_Tight_EGM2D.root")])
+
+
 # 5.02 TeV
 extLepSF.add_weight_sets(["MuonTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
 extLepSF.add_weight_sets(["MuonTightSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
@@ -224,8 +229,8 @@ def AttachElecPOGSFs(electrons):
   pt = electrons.pt
   reco_sf          = SFevaluator['ElecRecoSF_{year}'.format(year=year)](eta,pt)
   reco_sf_err      = SFevaluator['ElecRecoSF_{year}_er'.format(year=year)](eta,pt)
-  id_sf            = SFevaluator['ElecMVA80_{year}'.format(year=year)](eta,pt)
-  id_sf_err        = SFevaluator['ElecMVA80_{year}_er'.format(year=year)](eta,pt)
+  id_sf            = SFevaluator['ElecCBT_{year}'.format(year=year)](eta,pt)
+  id_sf_err        = SFevaluator['ElecCBT_{year}_er'.format(year=year)](eta,pt)
 
   electrons['sf_nom'] = reco_sf * id_sf
   err = np.sqrt(reco_sf_err*reco_sf_err/2 + id_sf_err*id_sf_err/2)

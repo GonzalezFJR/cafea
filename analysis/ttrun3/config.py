@@ -48,7 +48,7 @@ processDic = {
   'tW': 'tbarW, tW',
   'Nonprompt': 'WJetsToLNu, TTToSemiLep',
   'DY': 'DYJetsToLL_M50, DY_M10to50',
-  'Diboson' : 'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
+  'Diboson' : 'WW, WZ, ZZTo2L2Nu'#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
 }
 
 bkglist    = ['tt', 'tW', 'Nonprompt', 'DY', 'Diboson']

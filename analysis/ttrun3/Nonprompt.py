@@ -51,22 +51,30 @@ def Nonprompt(plt, level='g2jets', save=False):
   return NOS, NOS_e
 
 def DrawNonprompt(p, var='l0pt', level=level, chan=ch):
-  categories = {'level':level, 'sign':'SS', 'channel':chan}
+  #prdic =  #{'tt': 'TTTo2L2Nu, tbarW, tW', 'DY': 'WWTo2L2Nu, WZTo3LNu, DYJetsToLL_M50, DY_M10to50', 'Nonprompt': 'WJetsToLNu, TTToSemiLep'}
+  #colordic = {'tt' : '#ff6782', 'DY':'#00b4bd', 'Nonprompt': '#47ce33'}
+  prdic = {'Prompt': 'TTTo2L2Nu, tbarW, tW, WWTo2L2Nu, WZTo3LNu, DYJetsToLL_M50, DY_M10to50', 'Nonprompt': 'WJetsToLNu, TTToSemiLep'}
+  colordic = {'Prompt' : '#ff6782', 'Nonprompt': '#47ce33'}
+  bkgList = ['Prompt','Nonprompt']
+  p = plotter(path, prDic=prdic, bkgList=bkgList, colors=colordic, lumi=lumi, var=var)
+  p.SetDataName('pseudodata')
+  categories = {'level':level, 'sign':'SS', 'channel':chan, 'syst':'norm'}
   p.SetRatio(True)
   p.SetOutpath(outpatho)
   p.plotData = True
   p.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
-  p.SetDataName('Pseudodata')
-  label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
+  p.SetCategories(categories)
+  label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])  + ', same-sign'
+  p.SetRebin(var, 2)
   p.SetRegion(label)
   p.SetOutput(output)
-  p.SetSystematics(syst=['lepSF', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  #p.SetSystematics(syst=['lepSF', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   p.Stack(var, xtit='', ytit='', dosyst=True)
 
 
 
 if __name__ == '__main__':
-  Nonprompt(p, level=level, save=True)
-  DrawNonprompt(p, 'l0pt')
+  #Nonprompt(p, level=level, save=True)
+  DrawNonprompt(p, 'njets')
 
 

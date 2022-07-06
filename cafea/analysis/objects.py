@@ -172,4 +172,7 @@ def isElectronMVA(electrons, ptCut=20, etaCut=2.5):
   ''' Electron MVA eff = 0.80: https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun2 '''
   return (electrons.mvaFall17V2Iso_WP80)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)
 
+def isElectronCutBased(electrons, ptCut=20, etaCut=2.5):
+  return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+
 ###############################################################

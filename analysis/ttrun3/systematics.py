@@ -40,13 +40,13 @@ x.AddModUnc('$\mu_R, \mu_F$ scales', scale, isRelative=True)
 x.ComputeXsecUncertainties()
 
 
-x.xsecunc['eleceff'] = x.xsecnom * 0.018 #x.xsecunc['eleceff']/2.3
+#x.xsecunc['eleceff'] = x.xsecnom * 0.018 #x.xsecunc['eleceff']/2.3
 
 mueff1 = x.xsecunc['muoneff'] # Muon eff unc from SFs
 mueff2 = x.xsecnom*0.005      # Extra 0.5% from phase space extrapolation
 x.xsecunc['muoneff'] = np.sqrt(mueff1*mueff1 + mueff2*mueff2)
 
 x.GetYieldsTable()
-x.GetUncTable()
+x.GetUncTable(form='%1.1f')
 
 

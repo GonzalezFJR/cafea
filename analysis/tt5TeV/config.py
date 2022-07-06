@@ -24,6 +24,7 @@ parser.add_argument('--level',    '-l', default = 'incl'                   , hel
 parser.add_argument('--output',   default = None                     , help = 'Name of the output png file')
 parser.add_argument('--outpath',  '-o', default = None                     , help = 'Name of the output path')
 parser.add_argument('--data',     '-d', action= 'store_true'             , help = 'Do data?')
+parser.add_argument('--syst',     '-s', default= None             , help = 'Systematic choice')
 args = parser.parse_args()
 
 path  = args.path
@@ -33,9 +34,10 @@ level = args.level
 output = args.output
 doData = args.data
 outpatho = args.outpath
+systch = args.syst
 if outpatho is None: outpatho = 'temp/'
 if not outpatho.endswith('/'): outpatho += '/'
-syst = 'norm'
+#syst = 'norm'
 
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
@@ -66,17 +68,25 @@ colordic ={
 colors = [colordic[k] for k in bkglist]
 
 def GetChLab(channel):
-  if '_fake' in channel: channel = 'non-iso ' + channel[0]
+  if isinstance(channel, list) and len(channel) > 1:
+    channel = '$\ell$'
+  elif isinstance(channel, list):
+    channel = channel[0]
+  if '_fake' in channel: 
+    channel = 'non-iso ' + channel[0]
   channel = channel.replace('m', '$\mu$')
   return channel
 
 def GetLevLab(lev):
   if   lev == 'incl'  : return ''
+  elif lev == 'g2jets': return ', $\geq$2 jets'
   elif lev == 'g4jets': return ', $\geq$4 jets'
   elif lev == '0b'    : return ', $\geq$4 jets, 0b'
   elif lev == '1b'    : return ', $\geq$4 jets, 1b'
   elif lev == '2b'    : return ', $\geq$4 jets, 2b'
-  return ''
+  elif lev == 'g5j1b' : return ', $\geq$4j, 1b'
+  elif lev == 'g5j2b' : return ', $\geq$5j, 2b'
+  return lev
 
 def GetModSystHisto(path, fname, systname, var=None, prname='tt', samplab='sample', prlab='process', systlab='syst', systnormlab='norm'):
   h  = GetHisto(path+ fname +   '.pkl.gz', var, group=None)

@@ -15,7 +15,7 @@ from coffea.lumi_tools import LumiMask
 
 from cafea.modules.GetValuesFromJsons import get_param
 from cafea.analysis.objects import *
-from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetPUSF, AttachMuonPOGSFs, AttachElecPOGSFs, GetTriggerSF
+from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetPUSF, AttachMuonPOGSFs, AttachElecPOGSFs, GetTriggerSF, GetTrigSFttbar
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
@@ -112,19 +112,21 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         # Pre-selection 
         #e["idEmu"] = ttH_idEmu_cuts_E3(e.hoe, e.eta, e.deltaEtaSC, e.eInvMinusPInv, e.sieie)
-        e["conept"] = coneptElec(e.pt, e.mvaTTH, e.jetRelIso)
-        mu["conept"] = coneptMuon(mu.pt, mu.mvaTTH, mu.jetRelIso, mu.mediumId)
-        e["btagDeepB"] = ak.fill_none(e.matched_jet.btagDeepB, -99)
-        mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
+        #e["conept"] = coneptElec(e.pt, e.mvaTTH, e.jetRelIso)
+        #mu["conept"] = coneptMuon(mu.pt, mu.mvaTTH, mu.jetRelIso, mu.mediumId)
+        #e["btagDeepB"] = ak.fill_none(e.matched_jet.btagDeepB, -99)
+        #mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
         # Muon selection
         #mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumPromptId, mu.btagDeepB, ptCut=20, etaCut=2.4)
         #mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
-        mu['isGood'] = isMuonPOGM(mu, ptCut=20)
+        mu['isGood'] = isMuonPOGL(mu, ptCut=20)
 
         # Electron selection
         #e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaFall17V2noIso_WPL, 20, 2.4)
         #e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        if not hasattr(events, "fixedGridRhoFastjetAll"): events["fixedGridRhoFastjetAll"] = np.zeros_like(events, dtype=float)
+        AttachCutBasedTight(e, events.fixedGridRhoFastjetAll)
         e['isGood'] = isElectronCutBased(e, ptCut=20)
 
         # Build loose collections
@@ -132,6 +134,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         e_sel = e[e.isGood] #e[e.isLoose & e.isMVA]
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
+        print('m_sel = ', m_sel, '\n\n')
+        print('e_sel = ', e_sel, '\n\n')
+  
+
+        #print('Num elecs = ', np.sum(ak.num(e_sel)), '\n\n')
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
         llpairs = ak.combinations(l_sel, 2, fields=["l0","l1"])
@@ -141,6 +148,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         l_sel_padded = ak.pad_none(l_sel, 2)
         l0 = l_sel_padded[:,0]
         l1 = l_sel_padded[:,1]
+
 
         ### Attach scale factors
         if not isData:
@@ -161,7 +169,17 @@ class AnalysisProcessor(processor.ProcessorABC):
         events['isee'] = (ak.num(m_sel) == 0) & (ak.num(e_sel) == 2)
         events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1)
         events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1)
-        GetTriggerSF(2018, events, l0, l1)
+        #GetTriggerSF(2018, events, l0, l1) # from top EFT
+
+        if not isData:
+          e_padded = ak.pad_none(e_sel, 1)
+          m_padded = ak.pad_none(m_sel, 1)
+          ept = e_padded[:,0].pt
+          mpt = m_padded[:,0].pt
+          trigSF, trigUp, trigDo = GetTrigSFttbar(ept, mpt)
+          events['trigger_sf'    ] = trigSF
+          events['trigger_sfUp'  ] = trigUp
+          events['trigger_sfDown'] = trigDo
 
         # Jet cleaning, before any jet selection
         vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
@@ -172,6 +190,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
 
         # Jet energy corrections
+        met = events.MET
         if not isData:
           cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
           cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
@@ -185,6 +204,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           cleanedJets_JESDown = corrected_jets.JES_jes.down
           jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
           met = met_factory.build(events.MET, corrected_jets, events_cache)
+        '''
         else:
           cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
           cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
@@ -194,11 +214,12 @@ class AnalysisProcessor(processor.ProcessorABC):
           cleanedJets = corrected_jets
           jetptname = "pt"#"pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
           met = met_factory.build(events.MET, corrected_jets, events_cache)
+        '''
         
         ################################ Jet selection
         jetptcut = 25
         metcut = 30
-        cleanedJets["isGood"] = isTightJet(getattr(cleanedJets, jetptname), cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
+        cleanedJets["isGood"] = isTightJet(cleanedJets.pt, cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
         goodJets = cleanedJets[cleanedJets.isGood]
         if not isData:
           cleanedJets_JESUp["isGood"] = isTightJet(getattr(cleanedJets_JESUp, jetptname), cleanedJets_JESUp.eta, cleanedJets_JESUp.jetId, jetPtCut=jetptcut)
@@ -212,9 +233,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
 
         ### Trigger and overlap removal
-        trigem = np.ones_like(events['event'], dtype=bool)
-        trigee = np.ones_like(events['event'], dtype=bool)
-        trigmm = np.ones_like(events['event'], dtype=bool)
+        trigList_em = trigttbar["2018"]["em"] + trigttbar["2018"]["e"] + trigttbar["2018"]["m"]
+        trigList_ee = trigttbar["2018"]["ee"] + trigttbar["2018"]["e"] 
+        trigList_mm = trigttbar["2018"]["mm"] + trigttbar["2018"]["m"]
+        trigem = passesTrgInLst(events, trigList_em) # np.ones_like(events['event'], dtype=bool)
+        trigee = passesTrgInLst(events, trigList_ee) # np.ones_like(events['event'], dtype=bool)
+        trigmm = passesTrgInLst(events, trigList_mm) # np.ones_like(events['event'], dtype=bool)
 
         # ee events: trigee, only from HighEGJet
         # mm events: trigmm, only from SingleMuon

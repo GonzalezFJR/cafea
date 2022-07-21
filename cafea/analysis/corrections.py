@@ -132,6 +132,9 @@ extLepSF.add_weight_sets(["ElecMVA80_2018_er EGamma_SF2D_error %s"%cafea_path("d
 extLepSF.add_weight_sets(["ElecCBT_2018 EGamma_SF2D %s"%cafea_path("data/ElecSF/egammaEffi_Ele_Tight_EGM2D.root")])
 extLepSF.add_weight_sets(["ElecCBT_2018_er EGamma_SF2D_error %s"%cafea_path("data/ElecSF/egammaEffi_Ele_Tight_EGM2D.root")])
 
+# Trigger ttbar
+extLepSF.add_weight_sets(["Trig_2018_em h2D_SF_emu_lepABpt_FullError %s"%cafea_path("data/triggerSF/ttbarRun2UL/TriggerSF_2018.root")]) 
+extLepSF.add_weight_sets(["Trig_2018_em_er h2D_SF_emu_lepABpt_FullError_error %s"%cafea_path("data/triggerSF/ttbarRun2UL/TriggerSF_2018.root")]) 
 
 # 5.02 TeV
 extLepSF.add_weight_sets(["MuonTightSF_5TeV EGamma_SF2D %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_mu_loosetotightSF.root')])
@@ -145,6 +148,13 @@ extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(
 
 extLepSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
+
+def GetTrigSFttbar(elecpt, muonpt):
+  SF = SFevaluator["Trig_2018_em"   ](elecpt, muonpt)
+  er = SFevaluator["Trig_2018_em_er"](elecpt, muonpt)
+  up = SF+er
+  do = SF-er
+  return SF, up, do
 
 def AttachMuonSF(muons, year=2018):
   '''

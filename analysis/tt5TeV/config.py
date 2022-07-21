@@ -103,7 +103,11 @@ def GetModSystHistos(path, fname, systname, var=None):
 
 
 def RebinVar(p, var):
+  b0 = None; bN = None
   if var == 'minDRjj':
     b0 = 0.4; bN = 2.0
+  elif var =='medianDRjj':
+    b0 = 1.0; bN = 3.5
+  if b0 is not None:
     p.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
 

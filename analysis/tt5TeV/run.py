@@ -33,7 +33,7 @@ if __name__ == '__main__':
   parser.add_argument('--chunksize','-s'   , default=100000  , help = 'Number of events per chunk')
   parser.add_argument('--nchunks','-c'   , default=None  , help = 'You can choose to run only a number of chunks')
   parser.add_argument('--outname','-o'   , default='plots5TeV', help = 'Name of the output file with histograms')
-  parser.add_argument('--outpath','-p'   , default='histos', help = 'Name of the output directory')
+  parser.add_argument('--outpath','-p'   , default='histos5TeV', help = 'Name of the output directory')
   parser.add_argument('--treename'   , default='Events', help = 'Name of the tree inside the files')
   parser.add_argument('--jobs', '-j',  action='store_true', help = 'send jobs')
   parser.add_argument('--queue', '-q'  , default='batch', help = 'Queue to send jobs')

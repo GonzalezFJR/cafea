@@ -2,6 +2,7 @@ from cafea.plotter.plotter import *
 import os, pandas
 import numpy as np
 branches = ['A_njets', 'A_nbtags', 'A_ht', 'A_st', 'A_sumAllPt', 'A_leta', 'A_j0pt', 'A_j0eta', 'A_u0pt', 'A_u0eta', 'A_ptjj', 'A_mjj', 'A_medianDRjj', 'A_minDRjj', 'A_mlb', 'A_mt', 'A_ptsumveclb', 'A_drlb']
+nworkers = 64
 
 def LoadColumns(path, sampleName, branches, isSignal=True):
   ''' open a pkl.gz sample and retrieve columns with names "branches", that must have the same length, and returns pandas dataset '''
@@ -77,8 +78,8 @@ class HepDataset(Dataset):
 def PrepareData(path, signal, bkg, var=branches, trainFrac=0.8, batch_size=64, nData=None, verbose=1):
   dtrain, dtest = BuildDataset(path, signal, bkg, var, trainFrac, nData, verbose)
   train    = HepDataset(dtrain)
-  train_dl = DataLoader(train, batch_size=batch_size, shuffle=True)
+  train_dl = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=nworkers)
   test     = HepDataset(dtest)
-  test_dl  = DataLoader(test, batch_size=batch_size, shuffle=True)
+  test_dl  = DataLoader(test, batch_size=batch_size, shuffle=True, num_workers=nworkers)
   return train_dl, test_dl
 

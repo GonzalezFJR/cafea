@@ -43,9 +43,9 @@ def GetElecPtSmear(pt, eta, isdata = False):
 '''
 
 fillAll = True
-fillDNN = True
-doSyst = True
-fillAcc = False
+fillDNN = False
+doSyst = False
+fillAcc = True
 
 def AttachTrigSF(e0, m0, events):
   TrigSFe, TrigSFedo, TrigSFeup = GetTriggerSF5TeV(e0.pt, np.abs(e0.eta), 'e')
@@ -126,28 +126,47 @@ class AnalysisProcessor(processor.ProcessorABC):
         #  B: 3j1b
         # Vars:
         # njets, nbtags, ht, dRlb, st, ptlb, sumallpt, ptuu, muu, medianDRuu, u0pt, u0eta, ptjj, mjj, medianDRjj, minDRjj, mlb, mt
-        'A_njets' : processor.column_accumulator(np.array([])),
-        'A_nbtags' : processor.column_accumulator(np.array([])),
-        'A_ht' : processor.column_accumulator(np.array([])),
-        'A_st' : processor.column_accumulator(np.array([])),
-        'A_sumAllPt' : processor.column_accumulator(np.array([])),
-        'A_leta' : processor.column_accumulator(np.array([])),
-        'A_j0pt' : processor.column_accumulator(np.array([])),
-        'A_j0eta' : processor.column_accumulator(np.array([])),
-        'A_u0pt' : processor.column_accumulator(np.array([])),
-        'A_u0eta' : processor.column_accumulator(np.array([])),
-        'A_ptjj' : processor.column_accumulator(np.array([])),
-        'A_mjj' : processor.column_accumulator(np.array([])),
-        'A_medianDRjj' : processor.column_accumulator(np.array([])),
-        'A_minDRjj' : processor.column_accumulator(np.array([])),
-        'A_mlb' : processor.column_accumulator(np.array([])),
-        'A_mt' : processor.column_accumulator(np.array([])),
-        'A_ptsumveclb' : processor.column_accumulator(np.array([])),
-        'A_drlb' : processor.column_accumulator(np.array([])),
-        'B_druu' : processor.column_accumulator(np.array([])),
-        'B_druumedian' : processor.column_accumulator(np.array([])),
-        'B_muu' : processor.column_accumulator(np.array([])),
-        'B_ptuu' : processor.column_accumulator(np.array([])),
+        '3j1b_njets' : processor.column_accumulator(np.array([])),
+        '3j1b_nbtags' : processor.column_accumulator(np.array([])),
+        '3j1b_ht' : processor.column_accumulator(np.array([])),
+        '3j1b_st' : processor.column_accumulator(np.array([])),
+        '3j1b_sumAllPt' : processor.column_accumulator(np.array([])),
+        '3j1b_leta' : processor.column_accumulator(np.array([])),
+        '3j1b_j0pt' : processor.column_accumulator(np.array([])),
+        '3j1b_j0eta' : processor.column_accumulator(np.array([])),
+        '3j1b_u0pt' : processor.column_accumulator(np.array([])),
+        '3j1b_u0eta' : processor.column_accumulator(np.array([])),
+        '3j1b_ptjj' : processor.column_accumulator(np.array([])),
+        '3j1b_mjj' : processor.column_accumulator(np.array([])),
+        '3j1b_medianDRjj' : processor.column_accumulator(np.array([])),
+        '3j1b_minDRjj' : processor.column_accumulator(np.array([])),
+        '3j1b_mlb' : processor.column_accumulator(np.array([])),
+        '3j1b_mt' : processor.column_accumulator(np.array([])),
+        '3j1b_ptsumveclb' : processor.column_accumulator(np.array([])),
+        '3j1b_drlb' : processor.column_accumulator(np.array([])),
+        '3j1b_druu' : processor.column_accumulator(np.array([])),
+        '3j1b_druumedian' : processor.column_accumulator(np.array([])),
+        '3j1b_muu' : processor.column_accumulator(np.array([])),
+        '3j1b_ptuu' : processor.column_accumulator(np.array([])),
+
+        '2j1b_njets' : processor.column_accumulator(np.array([])),
+        '2j1b_nbtags' : processor.column_accumulator(np.array([])),
+        '2j1b_ht' : processor.column_accumulator(np.array([])),
+        '2j1b_st' : processor.column_accumulator(np.array([])),
+        '2j1b_sumAllPt' : processor.column_accumulator(np.array([])),
+        '2j1b_leta' : processor.column_accumulator(np.array([])),
+        '2j1b_j0pt' : processor.column_accumulator(np.array([])),
+        '2j1b_j0eta' : processor.column_accumulator(np.array([])),
+        '2j1b_u0pt' : processor.column_accumulator(np.array([])),
+        '2j1b_u0eta' : processor.column_accumulator(np.array([])),
+        '2j1b_ptjj' : processor.column_accumulator(np.array([])),
+        '2j1b_mjj' : processor.column_accumulator(np.array([])),
+        '2j1b_medianDRjj' : processor.column_accumulator(np.array([])),
+        '2j1b_minDRjj' : processor.column_accumulator(np.array([])),
+        '2j1b_mlb' : processor.column_accumulator(np.array([])),
+        '2j1b_mt' : processor.column_accumulator(np.array([])),
+        '2j1b_ptsumveclb' : processor.column_accumulator(np.array([])),
+        '2j1b_drlb' : processor.column_accumulator(np.array([])),
         })
 
     @property
@@ -227,9 +246,14 @@ class AnalysisProcessor(processor.ProcessorABC):
           AttachTrigSF(e0, m0, events)
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
-        leps = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMLorentzVector')
+        leps  = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMLorentzVector')
+        fakes = ak.with_name(ak.concatenate([e_fake, m_fake], axis=1), 'PtEtaPhiMLorentzVector')
         l_sel_padded = ak.pad_none(l_sel, 1)
         lsel0 = l_sel_padded[:,0]
+
+        l_fake = ak.with_name(ak.concatenate([e_fake, m_fake], axis=1), 'PtEtaPhiMCandidate')
+        l_fake_padded = ak.pad_none(l_fake, 1)
+        lfake0 = l_fake_padded[:,0]
 
         events.MET['pt_raw'] = events.RawMET.pt
 
@@ -489,11 +513,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         j0_nom, drjj_nom, drjjmedian_nom, mjj_nom, ptjj_nom = GetJetVariables(goodJets)
         u0_nom, druu_nom, druumedian_nom, muu_nom, ptuu_nom = GetJetVariables(goodJets[(goodJets.isBtag==0)])
         ptSumVecAll_nom, ptSumVeclb_nom, dRlb_nom, st_nom   = GetJetLepVar(goodJets, leps)
+        ptSumVecAll_fak, ptSumVeclb_fak, dRlb_fak, st_fak   = GetJetLepVar(goodJets, fakes)
 
         # ['A_ht', 'A_sumAllPt', 'A_leta', 'A_j0pt', 'A_mjj', 'A_medianDRjj', 'A_drlb']
         mjjpad = ak.pad_none(mjj_nom, 1)
         drjjpad = ak.pad_none(drjjmedian_nom, 1)
-        DNNscore_nom, _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lsel0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_nom)])
+        DNNscore_nom , _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lsel0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_nom)])
+        DNNscore_fake, _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lfake0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_fak)])
         #  DNNscore_nom = np.ones_like(events['event'], dtype=float)
 
         for syst in systList:
@@ -526,37 +552,40 @@ class AnalysisProcessor(processor.ProcessorABC):
           u0eta = ak.flatten(u0.eta)
 
           for ch in channels:
+            if ch in ['e_fake', 'm_fake']:
+              ptSumVecAll, ptSumVeclb, dRlb, st = (ptSumVecAll_fak, ptSumVeclb_fak, dRlb_fak, st_fak)
+              DNNscore = DNNscore_fake
             for lev in levels:
               #if syst in systJets and lev != 'incl': lev += syst
               cuts = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
               cut = selections.all(*cuts)
               weights = weights_dict[ch if not 'fake' in ch else ch[0]].weight(syst if not syst in (['norm']+systJets) else None)
 
-              if fillAcc and not isData and syst=='norm' and ch in ['e', 'm'] and lev in ['2j1b', '3j1b', '3j2b']:
-               hout['A_njets'] = processor.column_accumulator(njets[cut].to_numpy())
-               hout['A_nbtags'] = processor.column_accumulator(nbtags[cut].to_numpy())
-               hout['A_ht'] = processor.column_accumulator(ht[cut].to_numpy())
-               hout['A_st'] = processor.column_accumulator(st[cut].to_numpy())
-               hout['A_sumAllPt'] = processor.column_accumulator(ptSumVecAll[cut].to_numpy())
-               hout['A_leta'] = processor.column_accumulator(ak.flatten(l_sel.eta[cut]).to_numpy())
-               hout['A_j0pt'] = processor.column_accumulator(jet0pt[cut].to_numpy())
-               hout['A_j0eta'] = processor.column_accumulator(jet0eta[cut].to_numpy())
-               hout['A_u0pt'] = processor.column_accumulator(u0pt[cut].to_numpy())
-               hout['A_u0eta'] = processor.column_accumulator(u0eta[cut].to_numpy())
+              if fillAcc and not isData and syst=='norm' and ch in ['e', 'm'] and lev in ['2j1b', '3j1b']:
+               hout[f'{lev}_njets'] = processor.column_accumulator(njets[cut].to_numpy())
+               hout[f'{lev}_nbtags'] = processor.column_accumulator(nbtags[cut].to_numpy())
+               hout[f'{lev}_ht'] = processor.column_accumulator(ht[cut].to_numpy())
+               hout[f'{lev}_st'] = processor.column_accumulator(st[cut].to_numpy())
+               hout[f'{lev}_sumAllPt'] = processor.column_accumulator(ptSumVecAll[cut].to_numpy())
+               hout[f'{lev}_leta'] = processor.column_accumulator(ak.flatten(l_sel.eta[cut]).to_numpy())
+               hout[f'{lev}_j0pt'] = processor.column_accumulator(jet0pt[cut].to_numpy())
+               hout[f'{lev}_j0eta'] = processor.column_accumulator(jet0eta[cut].to_numpy())
+               hout[f'{lev}_u0pt'] = processor.column_accumulator(u0pt[cut].to_numpy())
+               hout[f'{lev}_u0eta'] = processor.column_accumulator(u0eta[cut].to_numpy())
 
-               hout['A_ptjj'] = processor.column_accumulator(ak.flatten(ptjj[cut]).to_numpy())
-               hout['A_mjj'] = processor.column_accumulator(ak.flatten(mjj[cut]).to_numpy())
-               hout['A_medianDRjj'] = processor.column_accumulator(ak.flatten(drjjmedian[cut]).to_numpy())
-               hout['A_minDRjj'] = processor.column_accumulator(ak.flatten(drjj[cut]).to_numpy())
-               hout['A_mlb'] = processor.column_accumulator( ak.flatten(GetMlb(l_sel[cut], goodJets[cut])) .to_numpy())
-               hout['A_mt'] = processor.column_accumulator( ak.flatten(GetMT(l_sel, met)[cut]) .to_numpy())
-               hout['A_ptsumveclb'] = processor.column_accumulator( ptSumVeclb[cut].to_numpy())
-               hout['A_drlb'] = processor.column_accumulator( ak.flatten(dRlb[cut]).to_numpy())
+               hout[f'{lev}_ptjj'] = processor.column_accumulator(ak.flatten(ptjj[cut]).to_numpy())
+               hout[f'{lev}_mjj'] = processor.column_accumulator(ak.flatten(mjj[cut]).to_numpy())
+               hout[f'{lev}_medianDRjj'] = processor.column_accumulator(ak.flatten(drjjmedian[cut]).to_numpy())
+               hout[f'{lev}_minDRjj'] = processor.column_accumulator(ak.flatten(drjj[cut]).to_numpy())
+               hout[f'{lev}_mlb'] = processor.column_accumulator( ak.flatten(GetMlb(l_sel[cut], goodJets[cut])) .to_numpy())
+               hout[f'{lev}_mt'] = processor.column_accumulator( ak.flatten(GetMT(l_sel, met)[cut]) .to_numpy())
+               hout[f'{lev}_ptsumveclb'] = processor.column_accumulator( ptSumVeclb[cut].to_numpy())
+               hout[f'{lev}_drlb'] = processor.column_accumulator( ak.flatten(dRlb[cut]).to_numpy())
                if lev == '3j1b':
-                 hout['B_druu'] = processor.column_accumulator( ak.flatten(druu[cut]).to_numpy())
-                 hout['B_druumedian'] = processor.column_accumulator( ak.flatten(druumedian[cut]).to_numpy())
-                 hout['B_muu'] = processor.column_accumulator( ak.flatten(muu[cut]).to_numpy())
-                 hout['B_ptuu'] = processor.column_accumulator( ak.flatten(ptuu[cut]).to_numpy())
+                 hout[f'{lev}_druu'] = processor.column_accumulator( ak.flatten(druu[cut]).to_numpy())
+                 hout[f'{lev}_druumedian'] = processor.column_accumulator( ak.flatten(druumedian[cut]).to_numpy())
+                 hout[f'{lev}_muu'] = processor.column_accumulator( ak.flatten(muu[cut]).to_numpy())
+                 hout[f'{lev}_ptuu'] = processor.column_accumulator( ak.flatten(ptuu[cut]).to_numpy())
 
               # Fill met norm histos
               cuts_metg20 = cuts+['metg20']; cuts_metl20 = cuts+['metl20']
@@ -614,7 +643,8 @@ class AnalysisProcessor(processor.ProcessorABC):
               if fillDNN and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
                 if isData: # compute only after applying cuts
                   htcut = ht[cut]
-                  DNNscore, _ = EvaluateModelForArrays(self.model, [ht[cut], ptSumVecAll_nom[cut], lsel0.eta[cut], ak.flatten(j0_nom.pt[cut]), ak.flatten(mjjpad[cut]), ak.flatten(drjjpad[cut]), ak.flatten(dRlb_nom[cut])])
+                  leta = lsel0.eta[cut] if ch in ['e', 'm'] else lfake0.eta[cut]
+                  DNNscore, _ = EvaluateModelForArrays(self.model, [ht[cut], ptSumVecAll[cut], leta, ak.flatten(j0.pt[cut]), ak.flatten(mjjpad[cut]), ak.flatten(drjjpad[cut]), ak.flatten(dRlb[cut])])
                   hout['DNNscore'].fill(sample=histAxisName, channel=ch, level=lev, DNNscore=DNNscore, syst=syst, weight=weights)
                                 
                 else:

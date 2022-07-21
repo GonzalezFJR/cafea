@@ -18,6 +18,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   plt.SetRegion(label)
   plt.SetOutpath(outpath)
   plt.SetOutput(output)
+  plt.SetLogY()
   rebin = None; xtit = ''; ytit = ''
   if doQCD: 
     hqcd = qcd.GetQCD(var, categories)
@@ -69,7 +70,7 @@ def Print1lplots():
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
       clab = c if not isinstance(c, list) else 'l'
       outp = outpath+'/1l/'+clab+'/'+l+'/'
-      for var in ['ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
+      for var in ['DNNscore']:#['ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
         if l=='incl' and var in ['j0pt', 'j0eta']: continue
         if var == 'DNNscore' and not l in ['2j1b', '3j1b', '3j2b']: continue
         outname = "%s_%s_%s"%(var, clab, l)

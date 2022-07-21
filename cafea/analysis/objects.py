@@ -17,7 +17,7 @@ def isTightTau(idDeepTau2017v2p1VSjet):
     return (idDeepTau2017v2p1VSjet>>2 & 1)
 
 def isTightJet(pt, eta, jet_id, jetPtCut=25.0):
-    mask = ((pt>jetPtCut) & (abs(eta)<2.4) & (jet_id>1))
+    mask = ((pt>jetPtCut) & (np.abs(eta)<2.4) & (jet_id>1))
     return mask
 
 def ttH_idEmu_cuts_E3(hoe, eta, deltaEtaSC, eInvMinusPInv, sieie):
@@ -167,12 +167,103 @@ def MuonTightIso(muons):
 def isMuonPOGM(muons, ptCut=20, etaCut=2.4):
   ''' https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonSelection '''
   return (MuonTightIso(muons))&(MuonMediumPrimptID(muons)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
+
+def isMuonPOGL(muons, ptCut=20, etaCut=2.4):
+  return ((muons.pfRelIso04_all < 0.4)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
   
 def isElectronMVA(electrons, ptCut=20, etaCut=2.5):
   ''' Electron MVA eff = 0.80: https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun2 '''
   return (electrons.mvaFall17V2Iso_WP80)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)
 
 def isElectronCutBased(electrons, ptCut=20, etaCut=2.5):
-  return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+  #return (electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20) # XXX
+  #return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+  return (electrons.isCutBasedTight)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+
+#def ElectronCutBasedTight(electrons, ptCut=20, etaCut=2.5):
+#   ''' Full selection from https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2'''
+
+
+def AttachCutBasedTight(elec, rho):
+  etasc = np.abs(elec.eta - elec.deltaEtaSC)
+  #rho = events.fixedGridRhoFastjetAll
+  isBarrel = (etasc < 1.479)
+
+  # Barrel
+  full5x5_sigmaIEtaIEtaCut       = 0.0104   # full5x5_sigmaIEtaIEtaCut
+  dEtaInSeedCut                  = 0.00255  # dEtaInSeedCut
+  dPhiInCut                      = 0.022    # dPhiInCut
+  hOverECut_C0                   = 0.026    # hOverECut
+  hOverECut_CE                   = 1.15    
+  hOverECut_Cr                   = 0.0324 
+  relCombIsolationWithEACut_C0   = 0.0287   # relCombIsolationWithEACut
+  relCombIsolationWithEACut_Cpt  = 0.506   
+  absEInverseMinusPInverseCut    = 0.159    # absEInverseMinusPInverseCut
+  missingHitsCut                 = 1        # missingHitsCut
+
+  elecbarrel = ak.copy(elec)
+  AttachRelIsoCut(elecbarrel, relCombIsolationWithEACut_C0, relCombIsolationWithEACut_Cpt)
+  AttachHoECut(elecbarrel, rho, hOverECut_C0, hOverECut_CE, hOverECut_Cr)
+  cutBased_barrel = PassCutBased(elecbarrel, full5x5_sigmaIEtaIEtaCut, dEtaInSeedCut, dPhiInCut, missingHitsCut, absEInverseMinusPInverseCut)
+
+  # Endcap
+  full5x5_sigmaIEtaIEtaCut       = 0.0353   # full5x5_sigmaIEtaIEtaCut
+  dEtaInSeedCut                  = 0.00501  # dEtaInSeedCut
+  dPhiInCut                      = 0.0236   # dPhiInCut
+  hOverECut_C0                   = 0.0188   # hOverECut
+  hOverECut_CE                   = 2.06    
+  hOverECut_Cr                   = 0.183   
+  relCombIsolationWithEACut_C0   = 0.0445   # relCombIsolationWithEACut
+  relCombIsolationWithEACut_Cpt  = 0.963   
+  absEInverseMinusPInverseCut    = 0.0197   # absEInverseMinusPInverseCut
+  missingHitsCut                 = 1        # missingHitsCut
+
+  elecendcap = ak.copy(elec)
+  AttachRelIsoCut(elecendcap, relCombIsolationWithEACut_C0, relCombIsolationWithEACut_Cpt)
+  AttachHoECut(elecendcap, rho, hOverECut_C0, hOverECut_CE, hOverECut_Cr)
+  cutBased_endcap = PassCutBased(elecendcap, full5x5_sigmaIEtaIEtaCut, dEtaInSeedCut, dPhiInCut, missingHitsCut, absEInverseMinusPInverseCut)
+  cutBased = np.where(isBarrel, cutBased_barrel, cutBased_endcap)
+  elec['isCutBasedTight'] = cutBased
+
+def AttachRelIsoCut(elec, C0, Cpt):
+  isocut = C0 + Cpt/elec.pt
+  elec['isocut'] = isocut
+  return
+
+def AttachHoECut(elec, rho, C0, CE, Cr):
+  rho = 0.
+  #rho = ak.broadcast_arrays(events.fixedGridRhoFastjetAll, elec.pt)[0]
+  HoEcut = C0 + CE/elec.energy + Cr*rho/elec.energy
+  elec['HoEcut'] = HoEcut
+  return
+
+def PassCutBased(elec, sietaieta_cut, dEtaSeed_cut, dPhiIn_cut, missingHits_cut, Einvmpinv_cut):
+  ''' You need to attach iso and hoe first '''
+  sietaieta_mask   = (elec.sieie  < sietaieta_cut)
+  dEtaSeed_mask    = np.ones_like(elec.pt, dtype=bool) #(np.abs(elec.deltaEtaSC)  < dEtaSeed_cut)
+  dPhiIn_mask      = np.ones_like(elec.pt, dtype=bool) #(np.abs()  < dPhiIn_cut) # xxx missing
+  Einvmpinv_mask   = (np.abs(elec.eInvMinusPInv) < Einvmpinv_cut)
+  missingHits_mask = (elec.lostHits  < missingHits_cut)
+  HoE_mask         = (elec.hoe < elec.HoEcut)
+  iso_mask         = (elec.pfRelIso03_all < elec.isocut)
+  conv_mask        = (elec.convVeto)
+  #print('sietaieta_mask  = ',  sietaieta_mask)
+  #print('dEtaSeed_mask   = ', dEtaSeed_mask)
+  #print('dPhiIn_mask     = ', dPhiIn_mask)
+  #print('Einvmpinv_mask  = ', Einvmpinv_mask)
+  #print('missingHits_mask= ', missingHits_mask)
+  #print('HoE_mask        = ', HoE_mask)
+  #print('iso_mask        = ', iso_mask)
+  #print('conv_mask       = ', conv_mask)
+  #print('\n\n')
+  return (sietaieta_mask)&(dEtaSeed_mask)&(dPhiIn_mask)&(Einvmpinv_mask)&(missingHits_mask)&(HoE_mask)&(iso_mask)&(conv_mask)
+  
+
+
+
+
+
+
+
 
 ###############################################################

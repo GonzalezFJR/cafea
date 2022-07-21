@@ -2,6 +2,8 @@ from config import *
 
 def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
+  #print(plt.hists)
+  #PrintHisto(plt.hists['ht'])
   if not CheckHistoCategories(plt.hists[var], categories):
     print("Nope")
     return
@@ -9,8 +11,10 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   plt.SetOutpath(outpath)
   plt.plotData = doData
   plt.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
+  if var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets']:
+    categories['sign'] = 'OS'
   plt.SetCategories(categories)
-  plt.SetDataName('Pseudodata')
+  #plt.SetDataName('Pseudodata')
   label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
   #AddLabel(self, x, #y, text, options={}):
   plt.SetRegion(label)
@@ -35,12 +39,11 @@ def Print2lplots():
     for l in ['dilep', 'g2jets']:
       outp = outpath+'/'+l+'/'
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
-      for var in ['njets', 'ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2']:
+      for var in ['ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2']:
         if l=='dilep' and var in ['j0pt', 'j0eta']: continue
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
-      for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta']:
-        cat['sign'] = 'OS'
+      for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets']:
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 

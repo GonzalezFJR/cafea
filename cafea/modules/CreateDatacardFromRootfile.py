@@ -4,24 +4,13 @@
 import uproot, os
 import numpy as np
 from coffea import hist, processor
-
-def RmNegBins(fname, overwrite=True):
-  f = uproot.open(fname)
-  for k in f:
-    vals, bins = f[k].to_numpy(flow=False) 
-    if np.any(vals<0): 
-      vals = np.where(vals>0, vals, 0)
-      h = f[k].to_hist()
-      hist.export1d(h)
-  exit()
-
-
+from cafea.modules.FixNegValuesRoot import FixNegValuesRoot
 
 
 class Datacard:
   def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, rmNegBins=True):
     if rmNegBins:
-      RmNegBins(fname, overwrite=True)
+      FixNegValuesRoot(fname)
     self.LoadFile(fname)
     self.SetSignal(signal)
     self.SetBkg(bkgList)

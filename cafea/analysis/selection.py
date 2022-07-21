@@ -128,6 +128,18 @@ exclude_dict = {
     },
 }
 
+trigttbar = {
+  "2018" : {
+    "m"  : ['IsoMu24'],
+    "e"  : ['Ele32_WPTight_Gsf'],
+    "em" : ['Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ',
+            'Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL'],
+    "ee" : ['Ele23_Ele12_CaloIdL_TrackIdL_IsoVL',
+            'DoubleEle25_CaloIdL_MW',
+            'Ele32_WPTight_Gsf'],
+    "mm" : ['Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8'],
+  }
+}
 
 # This is a helper function called by trgPassNoOverlap
 #   - Takes events objects, and a lits of triggers

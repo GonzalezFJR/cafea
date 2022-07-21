@@ -1122,10 +1122,12 @@ class plotter:
     if ybkg == {}: return #process not found
     ybkg = ybkg[list(ybkg.keys())[0]]
     ybkgmax = max(ybkg)
+    PrintHisto(h)
     hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
+      print('Printing data...')
       hData, dataLabel = self.GetData(hname, h)
       if self.systLabel in [x.name for x in hData.axes()]:
         hData = hData.integrate(self.systLabel, self.systNormLabel)

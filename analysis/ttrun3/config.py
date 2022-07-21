@@ -39,7 +39,7 @@ syst = 'norm'
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
-lumi = 50; # pb
+lumi = 80; # pb
 year = '2022'
 
 
@@ -48,11 +48,12 @@ processDic = {
   'tW': 'tbarW, tW',
   'Nonprompt': 'WJetsToLNu, TTToSemiLep',
   'DY': 'DYJetsToLL_M50, DY_M10to50',
-  'Diboson' : 'WW, WZ, ZZTo2L2Nu'#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
+  'Diboson' : 'WW, WZ, ZZTo2L2Nu',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
+  'data' : 'DoubleMuon', # MuonEG
 }
 
 bkglist    = ['tt', 'tW', 'Nonprompt', 'DY', 'Diboson']
-bkglist = list(processDic.keys())
+#bkglist = list(processDic.keys())
 bkgnormunc = [0.05, 0.2, 0.2, 0.2, 0.3]
 
 colordic ={

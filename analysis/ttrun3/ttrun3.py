@@ -20,6 +20,7 @@ from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
 doSyst = True
+doJES = False
 
 def AttachTrigSF(e0, m0, events):
   TrigSFe, TrigSFedo, TrigSFeup = GetTriggerSF5TeV(e0.pt, np.abs(e0.eta), 'e')
@@ -89,7 +90,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         doPDFunc = "sumPDFWeights" in self._samples[dataset]
 
         # Golden JSON !
-        # golden_json_path = cafea_path("data/goldenJsons/Cert_306546-306826_5TeV_EOY2017ReReco_Collisions17_JSON.txt")
+        golden_json_path = cafea_path("data/goldenJsons/Cert_Collisions2022_355100_355913_13p6TeV_DCSOnly_TkPx.json")
+        lumi_mask = np.ones_like(events['event'], dtype=bool)
+        if isData:
+          lumi_mask = LumiMask(golden_json_path)(events.run,events.luminosityBlock)
 
         if doPDFunc:
           sowPDF       = self._samples[dataset]["sumPDFWeights"]
@@ -134,9 +138,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         e_sel = e[e.isGood] #e[e.isLoose & e.isMVA]
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
-        print('m_sel = ', m_sel, '\n\n')
-        print('e_sel = ', e_sel, '\n\n')
-  
 
         #print('Num elecs = ', np.sum(ak.num(e_sel)), '\n\n')
 
@@ -149,6 +150,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         l0 = l_sel_padded[:,0]
         l1 = l_sel_padded[:,1]
 
+        leadinglep = l_sel[ak.argmax(l_sel.pt, axis=-1, keepdims=True)]
+        leadingpt = ak.flatten(leadinglep.pt) #ak.pad_none(l_sel.pt, 1)
 
         ### Attach scale factors
         if not isData:
@@ -191,6 +194,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         # Jet energy corrections
         met = events.MET
+        '''
         if not isData:
           cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
           cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
@@ -204,7 +208,6 @@ class AnalysisProcessor(processor.ProcessorABC):
           cleanedJets_JESDown = corrected_jets.JES_jes.down
           jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
           met = met_factory.build(events.MET, corrected_jets, events_cache)
-        '''
         else:
           cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
           cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
@@ -221,7 +224,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         metcut = 30
         cleanedJets["isGood"] = isTightJet(cleanedJets.pt, cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
         goodJets = cleanedJets[cleanedJets.isGood]
-        if not isData:
+        if not isData and doJES:
           cleanedJets_JESUp["isGood"] = isTightJet(getattr(cleanedJets_JESUp, jetptname), cleanedJets_JESUp.eta, cleanedJets_JESUp.jetId, jetPtCut=jetptcut)
           cleanedJets_JESDown["isGood"] = isTightJet(getattr(cleanedJets_JESDown, jetptname), cleanedJets_JESDown.eta, cleanedJets_JESDown.jetId, jetPtCut=jetptcut)
           goodJetsJESUp = cleanedJets_JESUp[cleanedJets_JESUp.isGood]
@@ -233,9 +236,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
 
         ### Trigger and overlap removal
-        trigList_em = trigttbar["2018"]["em"] + trigttbar["2018"]["e"] + trigttbar["2018"]["m"]
-        trigList_ee = trigttbar["2018"]["ee"] + trigttbar["2018"]["e"] 
-        trigList_mm = trigttbar["2018"]["mm"] + trigttbar["2018"]["m"]
+        trigList_em = trigttbar["2018"]["em"]# + trigttbar["2018"]["e"] + trigttbar["2018"]["m"]
+        trigList_ee = trigttbar["2018"]["ee"]# + trigttbar["2018"]["e"] 
+        trigList_mm = trigttbar["2018"]["mm"]# + trigttbar["2018"]["m"]
         trigem = passesTrgInLst(events, trigList_em) # np.ones_like(events['event'], dtype=bool)
         trigee = passesTrgInLst(events, trigList_ee) # np.ones_like(events['event'], dtype=bool)
         trigmm = passesTrgInLst(events, trigList_mm) # np.ones_like(events['event'], dtype=bool)
@@ -243,7 +246,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # ee events: trigee, only from HighEGJet
         # mm events: trigmm, only from SingleMuon
         # em events: in SingleMuon: pass trigmm, in HighEGJet: pass trigee and not trigmm
-        if isData:
+        if True: #isData:
           trigem = np.ones_like(events['event'], dtype=bool)
           trigee = np.ones_like(events['event'], dtype=bool)
           trigmm = np.ones_like(events['event'], dtype=bool)
@@ -271,7 +274,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         # Add systematics
         systList = ["norm"]
-        systJets = ['JESUp', 'JESDo']
+        systJets = ['JESUp', 'JESDo'] if doJES else []
         #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
@@ -293,7 +296,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("OS", ( (events.isOS)))
         selections.add("SS", ( (events.isSS)))
  
-        selections.add("dilep",  (njets >= 0))
+        selections.add("dilep",  (njets >= 0)&(leadingpt>25)&(lumi_mask))
         selections.add("g2jets", (njets >= 2))
         selections.add("0jet", (njets == 0))
         selections.add("1jet", (njets == 1))
@@ -307,7 +310,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("mll", ( (mllvalues>20)))
 
-        if not isData: # JES systematics
+        if not isData and doJES: # JES systematics
           njetsJESUp = (ak.num(goodJetsJESUp))
           njetsJESDo = (ak.num(goodJetsJESDo))
           htJESUp = ak.sum(goodJetsJESUp.pt,axis=-1)
@@ -332,7 +335,7 @@ class AnalysisProcessor(processor.ProcessorABC):
          for ch in channels:
           if syst == "norm":
             for lev in ['0jet', '1jet', '2jet', '3jet', 'g4jet']:
-              cuts = [ch] + [lev] + ['mll'] + ['OS']
+              cuts = [ch] + [lev] + ['mll', 'dilep'] + ['OS']
               cut   = selections.all(*cuts)
               weights = weights_dict.weight(None)
               weights = weights[cut]
@@ -340,7 +343,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
               hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
           for lev in levels:
-            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll']
+            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']
             cutsOS = cuts + ['OS']
             cutsSS = cuts + ['SS']
             cut   = selections.all(*cutsOS)

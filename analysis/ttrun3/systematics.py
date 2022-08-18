@@ -31,7 +31,9 @@ tuneup , tunedo = GetModSystHistos(path, 'TTTo2L2Nu_UE', 'UE', var='counts')
 p.AddExtraBkgHist([hdampup, hdampdo, tuneup, tunedo], add=True)
 
 ### Create xsec object
-x = xsec('tt', 0.03, {'tW':0.15, 'Nonprompt':0.2, 'DY':0.2, 'Diboson':0.2}, plotter=p, verbose=1, thxsec=922.45, experimental=['eleceff', 'muoneff', 'trigSF', 'JES', 'PU'], modeling=['UE', 'hdamp', 'ISR', 'FSR'], categories=categories)
+experimental = [] # ['eleceff', 'muoneff', 'trigSF', 'JES', 'PU']
+modeling = ['ISR', 'FSR'] # ['UE', 'hdamp', 'ISR', 'FSR']
+x = xsec('tt', 0.03, {'tW':0.15, 'Nonprompt':0.2, 'DY':0.2, 'Diboson':0.2}, plotter=p, verbose=1, thxsec=922.45, experimental=experimental, modeling=modeling, categories=categories)
 x.SetNames(names)
 pdf   = Get1bPDFUnc(  path, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)
 scale = Get1binScaleUnc(path, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)
@@ -40,13 +42,12 @@ x.AddModUnc('$\mu_R, \mu_F$ scales', scale, isRelative=True)
 x.ComputeXsecUncertainties()
 
 
-#x.xsecunc['eleceff'] = x.xsecnom * 0.018 #x.xsecunc['eleceff']/2.3
-
-mueff1 = x.xsecunc['muoneff'] # Muon eff unc from SFs
-mueff2 = x.xsecnom*0.005      # Extra 0.5% from phase space extrapolation
-x.xsecunc['muoneff'] = np.sqrt(mueff1*mueff1 + mueff2*mueff2)
+# Update muon eff adding 0.5 %
+#mueff1 = x.xsecunc['muoneff'] # Muon eff unc from SFs
+#mueff2 = x.xsecnom*0.005      # Extra 0.5% from phase space extrapolation
+#x.xsecunc['muoneff'] = np.sqrt(mueff1*mueff1 + mueff2*mueff2)
 
 x.GetYieldsTable()
-x.GetUncTable(form='%1.1f')
+x.GetUncTable(form='%1.2f')
 
 

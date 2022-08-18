@@ -29,13 +29,13 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
-  plt.SetSystematics(syst=['eleceff', 'muoneff', 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  plt.SetSystematics(syst=['eleceff', 'muoneff', 'trigSF', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
   #plt.PrintYields('counts')
 
 def Print2lplots():
-  for c in ['em', 'ee', 'mm']:
+  for c in ['em']:#, 'ee', 'mm']:
     for l in ['dilep', 'g2jets']:
       outp = outpath+'/'+l+'/'
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}

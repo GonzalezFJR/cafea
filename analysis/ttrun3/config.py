@@ -32,14 +32,14 @@ level = args.level
 output = args.output
 doData = args.data
 outpatho = args.outpath
-if outpatho is None: outpatho = 'temp/'
+if outpatho is None: outpatho = '26jul2022_eraBC/'
 if not outpatho.endswith('/'): outpatho += '/'
 syst = 'norm'
 
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
-lumi = 80; # pb
+lumi = 129 + 93.7#142.8#93.7 #+142.8 #129 + 93.7; #142.8#129 + 93.7; # pb
 year = '2022'
 
 
@@ -49,9 +49,10 @@ processDic = {
   'Nonprompt': 'WJetsToLNu, TTToSemiLep',
   'DY': 'DYJetsToLL_M50, DY_M10to50',
   'Diboson' : 'WW, WZ, ZZTo2L2Nu',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
-  'data' : 'DoubleMuon', # MuonEG
+  'data' : 'MuonEG, MuonEG_2022C', 
 }
 
+#bkglist    = ['tt', 'tW', 'DY', 'Diboson']
 bkglist    = ['tt', 'tW', 'Nonprompt', 'DY', 'Diboson']
 #bkglist = list(processDic.keys())
 bkgnormunc = [0.05, 0.2, 0.2, 0.2, 0.3]

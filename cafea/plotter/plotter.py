@@ -561,6 +561,7 @@ def GetFileNameFromPath(path):
 class plotter:
   def __init__(self, path, prDic={}, colors={}, bkgList=[], dataName='data', outpath='./temp/', output=None, lumi=59.7, sigList=[], verbose=1, var=None):
     self.verbose = verbose
+    self.MCnorm = 1
     self.SetPath(path)
     self.SetProcessDic(prDic)
     self.SetBkgProcesses(bkgList)
@@ -737,6 +738,9 @@ class plotter:
     self.lumi = lumi
     self.lumiunit = lumiunit
     self.sqrts = sqrts
+
+  def SetMCnorm(self, val=1):
+    self.MCnorm = val
   
   def SetRange(self, xRange=None, yRange=None):
     self.xRange = None
@@ -1097,7 +1101,7 @@ class plotter:
       fill_opts  = None
 
     h = self.GetHistogram(hname, self.bkglist)
-    h.scale(self.lumi)
+    h.scale(self.lumi*self.MCnorm)
     if xtit=='': xtit = h.axis(aname).label
     self.AddExtraBkgToHisto(h)
 
@@ -1268,7 +1272,7 @@ class plotter:
     name = save if (save and save!='') else 'yields'
 
     # Create an OutText object: the output will be a tex file
-    t = OutText(self.outpath, name, 'new', 'tex')
+    t = OutText(self.outpath, name, 'new', 'tex', doPrint=True)
     t.bar()
 
     ncolumns = len(self.multicategories)

@@ -2,8 +2,6 @@ from config import *
 
 def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
-  #print(plt.hists)
-  #PrintHisto(plt.hists['ht'])
   if not CheckHistoCategories(plt.hists[var], categories):
     print("Nope")
     return
@@ -29,13 +27,13 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
-  plt.SetSystematics(syst=['eleceff', 'muoneff', 'trigSF', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  #plt.SetSystematics(syst=['eleceff', 'muoneff', 'trigSF', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
   #plt.PrintYields('counts')
 
 def Print2lplots():
-  for c in ['em']:#, 'ee', 'mm']:
+  for c in ['ee','em', 'mm']:
     for l in ['dilep', 'g2jets']:
       outp = outpath+'/'+l+'/'
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
@@ -47,7 +45,7 @@ def Print2lplots():
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 
-outpath = '/nfs/fanae/user/juanr/www/public/ttrun3/usingRun2/' + outpatho
+outpath = '/nfs/fanae/user/clara/www/private/ttrun3/' + outpatho
 if not var is None:
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
   outp = outpath+'/'+level+'/'

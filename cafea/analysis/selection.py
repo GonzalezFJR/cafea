@@ -96,8 +96,31 @@ dataset_dict = {
             "Mu8_DiEle12_CaloIdL_TrackIdL_DZ",
             "DiMu9_Ele9_CaloIdL_TrackIdL_DZ",
         ]
-    }
+    },
 
+    "2022" : {
+        "SingleMuon" : [
+            "IsoMu24",
+        ],
+        "DoubleMuon" : [
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8" 
+        ],
+        "EGamma" : [
+            'Ele32_WPTight_Gsf',
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "DoubleEle25_CaloIdL_MW",
+        ],
+        "MuonEG" : [
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+        ],
+        "Muon" : [
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
+            "IsoMu24",
+        ]
+    },
 }
 
 
@@ -126,6 +149,14 @@ exclude_dict = {
         "MuonEG"         : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"],
         "SingleMuon"     : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"] + dataset_dict["2018"]["MuonEG"],
     },
+    "2022": {
+        "Muon"           : [],
+        "SingleMuon"     : [],
+        "DoubleMuon"     : dataset_dict["2022"]["SingleMuon"],
+        "EGamma"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"],
+        "MuonEG"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
+        #"SingleElectron" : dataset_dict["2016"]["DoubleMuon"] + dataset_dict["2016"]["DoubleEG"] + dataset_dict["2016"]["MuonEG"] + dataset_dict["2016"]["SingleMuon"],
+    }
 }
 
 trigttbar = {
@@ -135,8 +166,8 @@ trigttbar = {
     "em" : ['Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ',
             'Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL'],
     "ee" : ['Ele23_Ele12_CaloIdL_TrackIdL_IsoVL',
-            'DoubleEle25_CaloIdL_MW',
-            'Ele32_WPTight_Gsf'],
+            'DoubleEle25_CaloIdL_MW'],
+            #'Ele32_WPTight_Gsf'],
     "mm" : ['Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8'],
   }
 }

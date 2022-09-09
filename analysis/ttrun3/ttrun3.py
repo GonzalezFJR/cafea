@@ -90,7 +90,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         doPDFunc = "sumPDFWeights" in self._samples[dataset]
 
         # Golden JSON !
-        golden_json_path = cafea_path("data/goldenJsons/Cert_Collisions2022_355100_355913_13p6TeV_DCSOnly_TkPx.json")
+        golden_json_path = cafea_path("data/goldenJsons/Cert_Collisions2022_356309_356615_Golden.json")
         lumi_mask = np.ones_like(events['event'], dtype=bool)
         if isData:
           lumi_mask = LumiMask(golden_json_path)(events.run,events.luminosityBlock)
@@ -116,26 +116,30 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         # Pre-selection 
         #e["idEmu"] = ttH_idEmu_cuts_E3(e.hoe, e.eta, e.deltaEtaSC, e.eInvMinusPInv, e.sieie)
-        #e["conept"] = coneptElec(e.pt, e.mvaTTH, e.jetRelIso)
-        #mu["conept"] = coneptMuon(mu.pt, mu.mvaTTH, mu.jetRelIso, mu.mediumId)
-        #e["btagDeepB"] = ak.fill_none(e.matched_jet.btagDeepB, -99)
-        #mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
+        e["conept"] = coneptElec(e.pt, e.mvaTTH, e.jetRelIso)
+        mu["conept"] = coneptMuon(mu.pt, mu.mvaTTH, mu.jetRelIso, mu.mediumId)
+        e["btagDeepB"] = ak.fill_none(e.matched_jet.btagDeepB, -99)
+        mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
         # Muon selection
-        #mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumPromptId, mu.btagDeepB, ptCut=20, etaCut=2.4)
-        #mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
-        mu['isGood'] = isMuonPOGL(mu, ptCut=20)
+        mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
+        mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        mu['isGood'] = isMuonPOGT(mu, ptCut=35)
 
         # Electron selection
-        #e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaFall17V2noIso_WPL, 20, 2.4)
-        #e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
+        e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
         if not hasattr(events, "fixedGridRhoFastjetAll"): events["fixedGridRhoFastjetAll"] = np.zeros_like(events, dtype=float)
         AttachCutBasedTight(e, events.fixedGridRhoFastjetAll)
-        e['isGood'] = isElectronCutBased(e, ptCut=20)
+        e['isGood'] = isElectronTight(e, ptCut=35, etaCut=2.4)
+     
 
         # Build loose collections
-        m_sel = mu[mu.isGood] #mu[mu.isLoose & mu.isMVA]
-        e_sel = e[e.isGood] #e[e.isLoose & e.isMVA]
+        #m_sel = mu[mu.isLoose & mu.isMVA]
+        #e_sel = e[e.isLoose & e.isMVA]
+        m_sel = mu[mu.isGood]
+        e_sel = e[e.isGood]
+
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
 
@@ -220,7 +224,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         '''
         
         ################################ Jet selection
-        jetptcut = 25
+        jetptcut = 30
         metcut = 30
         cleanedJets["isGood"] = isTightJet(cleanedJets.pt, cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
         goodJets = cleanedJets[cleanedJets.isGood]
@@ -234,23 +238,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         njets = ak.num(goodJets)
         ht = ak.sum(goodJets.pt,axis=-1)
         j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
-
-        ### Trigger and overlap removal
-        trigList_em = trigttbar["2018"]["em"]# + trigttbar["2018"]["e"] + trigttbar["2018"]["m"]
-        trigList_ee = trigttbar["2018"]["ee"]# + trigttbar["2018"]["e"] 
-        trigList_mm = trigttbar["2018"]["mm"]# + trigttbar["2018"]["m"]
-        trigem = passesTrgInLst(events, trigList_em) # np.ones_like(events['event'], dtype=bool)
-        trigee = passesTrgInLst(events, trigList_ee) # np.ones_like(events['event'], dtype=bool)
-        trigmm = passesTrgInLst(events, trigList_mm) # np.ones_like(events['event'], dtype=bool)
-
-        # ee events: trigee, only from HighEGJet
-        # mm events: trigmm, only from SingleMuon
-        # em events: in SingleMuon: pass trigmm, in HighEGJet: pass trigee and not trigmm
-        if True: #isData:
-          trigem = np.ones_like(events['event'], dtype=bool)
-          trigee = np.ones_like(events['event'], dtype=bool)
-          trigmm = np.ones_like(events['event'], dtype=bool)
-
+        
+        trig = trgPassNoOverlap(events,isData,dataset,year)  
+        
         # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
         if (isData): genw = np.ones_like(events["event"])
         else:        genw = events["genWeight"]
@@ -258,9 +248,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         weights_dict.add("norm",genw if isData else (xsec/sow)*genw)
         if not isData: # Apply SFs
           #weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
-          weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
-          weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
-          weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
+          #weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
+          #weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
+          #weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
           weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
         # PS = ISR, FSR (on ttPS only)
         if doPS: 
@@ -276,7 +266,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         systList = ["norm"]
         systJets = ['JESUp', 'JESDo'] if doJES else []
         #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
-        if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+        #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+        if not isData and not isSystSample: systList = systList + [ "PUUp", "PUDown"]+systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst: systList = ["norm"]
 
@@ -290,9 +281,9 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         # Add selections...
         selections = PackedSelection(dtype='uint64')
-        selections.add("em", ( (events.isem)&(trigem)))
-        selections.add("ee", ( (events.isee)&(trigee)))
-        selections.add("mm", ( (events.ismm)&(trigmm)))
+        selections.add("em", ( (events.isem)&(trig)))
+        selections.add("ee", ( (events.isee)&(trig)))
+        selections.add("mm", ( (events.ismm)&(trig)))
         selections.add("OS", ( (events.isOS)))
         selections.add("SS", ( (events.isSS)))
  

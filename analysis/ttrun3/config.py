@@ -39,20 +39,19 @@ syst = 'norm'
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
-lumi = 129 + 93.7#142.8#93.7 #+142.8 #129 + 93.7; #142.8#129 + 93.7; # pb
+lumi =  1230#314.6##142.8#93.7 #+142.8 #129 + 93.7; #142.8#129 + 93.7; # pb
 year = '2022'
 
 
 processDic = {
   'tt': 'TTTo2L2Nu',
   'tW': 'tbarW, tW',
-  'Nonprompt': 'WJetsToLNu, TTToSemiLep',
-  'DY': 'DYJetsToLL_M50, DY_M10to50',
-  'Diboson' : 'WW, WZ, ZZTo2L2Nu',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
-  'data' : 'MuonEG, MuonEG_2022C', 
+  'Nonprompt':'WJetsToLNu,TTToSemiLeptoni',
+  'DY': 'DYJetsToLL_M50, DYJetsToLL_M10to50', 
+  'Diboson' : 'WW, WZ, ZZ',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
+  'data' : 'MuonEG,EGamma,DoubleMuon,SingleMuon,Muon'
 }
 
-#bkglist    = ['tt', 'tW', 'DY', 'Diboson']
 bkglist    = ['tt', 'tW', 'Nonprompt', 'DY', 'Diboson']
 #bkglist = list(processDic.keys())
 bkgnormunc = [0.05, 0.2, 0.2, 0.2, 0.3]

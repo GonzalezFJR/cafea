@@ -46,21 +46,21 @@ year = '2022'
 processDic = {
   'tt': 'TTTo2L2Nu',
   'tW': 'tbarW, tW',
-  'tt_semilep':'TTToSemiLeptoni',
+  'semilep':'TTToSemiLeptoni',
   'WJets':'WJetsToLNu',
   'DY': 'DYJetsToLL_M50, DYJetsToLL_M10to50', 
   'Diboson' : 'WW, WZ, ZZ',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
   'data' : 'MuonEG,EGamma,DoubleMuon,SingleMuon,Muon'
 }
 
-bkglist    = ['tt', 'tW', 'tt_semilep','WJets', 'DY', 'Diboson']
+bkglist    = ['tt', 'tW', 'semilep','WJets', 'DY', 'Diboson']
 #bkglist = list(processDic.keys())
 bkgnormunc = [0.05, 0.15, 0.2, 0.3, 0.2, 0.3]
 
 colordic ={
   'tt' : '#cc0000',
   'tW' : '#ffc207',
-  'tt_semilep': '#6c3b2a',
+  'semilep': '#6c3b2a',
   'WJets': '#47ce33',
   'DY': '#3b78cb',
   'Diboson' : '#fdffcb',
@@ -90,3 +90,15 @@ def GetModSystHistos(path, fname, systname, var=None):
   up = GetModSystHisto(path, fname+'Up',   systname+'Up', var)
   do = GetModSystHisto(path, fname+'Down', systname+'Down', var)
   return up, do
+
+def GetJECSystHistos(path, fname, var, categories): # placeholder : up=down
+  #up  = GetModSystHisto(path, fname , systname+'Up', var)
+  #do  = GetModSystHisto(path, fname , systname+'Down', var).values()
+  nom=GetHisto(path+ 'TTTo2L2Nu.pkl.gz', var, categories)
+  nom=nom.integrate('syst','norm')
+  up=GetHisto(path+ fname+'.pkl.gz', var, categories)
+  up=up.integrate('syst','norm')
+  var=abs(nom.values()[('TTTo2L2Nu',)]-up.values()[('TTTo2L2Nu',)])/nom.values()[('TTTo2L2Nu',)]
+  return var
+
+

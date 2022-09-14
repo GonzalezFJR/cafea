@@ -27,7 +27,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
-  plt.SetSystematics(syst=['LepSF_muon', 'LepSF_elec', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  #plt.SetSystematics(syst=['LepSF_muon', 'LepSF_elec', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
   #plt.PrintYields('counts')
@@ -45,7 +45,7 @@ def Print2lplots():
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 
-outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF/' + outpatho
+outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU/' + outpatho
 if not var is None:
   ch='em'; level='g2jets'
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}

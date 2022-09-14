@@ -6,6 +6,7 @@ import pprint
 import numpy as np
 import awkward as ak
 import coffea
+import sys
 np.seterr(divide='ignore', invalid='ignore', over='ignore')
 from coffea import hist, processor
 from coffea.util import load, save
@@ -124,14 +125,14 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Muon selection
         mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
         mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
-        mu['isGood'] = isMuonPOGT(mu, ptCut=35)
+        mu['isGood'] = isMuonPOGT(mu, ptCut=20)
 
         # Electron selection
         e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
         e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
         if not hasattr(events, "fixedGridRhoFastjetAll"): events["fixedGridRhoFastjetAll"] = np.zeros_like(events, dtype=float)
         AttachCutBasedTight(e, events.fixedGridRhoFastjetAll)
-        e['isGood'] = isElectronTight(e, ptCut=35, etaCut=2.4)
+        e['isGood'] = isElectronTight(e, ptCut=20, etaCut=2.4)
      
 
         # Build loose collections
@@ -155,8 +156,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         l1 = l_sel_padded[:,1]
 
         leadinglep = l_sel[ak.argmax(l_sel.pt, axis=-1, keepdims=True)]
+        subleadinglep = l_sel[ak.argmin(l_sel.pt, axis=-1, keepdims=True)]
         leadingpt = ak.flatten(leadinglep.pt) #ak.pad_none(l_sel.pt, 1)
-
+        subleadingpt = ak.flatten(subleadinglep.pt) #ak.pad_none(l_sel.pt, 1)
         ### Attach scale factors
         if not isData:
           #AttachElectronSF(e_sel,year='2018')
@@ -240,7 +242,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
         
         trig = trgPassNoOverlap(events,isData,dataset,year)  
-        
+        METfilters = PassMETfilters(events,isData)
         # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
         if (isData): genw = np.ones_like(events["event"])
         else:        genw = events["genWeight"]
@@ -248,10 +250,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         weights_dict.add("norm",genw if isData else (xsec/sow)*genw)
         if not isData: # Apply SFs
           #weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
-          #weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
-          #weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
+          weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
+          weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
           #weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
-          weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
+          #weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
         # PS = ISR, FSR (on ttPS only)
         if doPS: 
           i_ISRdown = 0; i_FSRdown = 1; i_ISRup = 2; i_FSRup = 3
@@ -267,27 +269,51 @@ class AnalysisProcessor(processor.ProcessorABC):
         systJets = ['JESUp', 'JESDo'] if doJES else []
         #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
-        if not isData and not isSystSample: systList = systList + [ "PUUp", "PUDown"]+systJets
-        if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
+        #if not isData and not isSystSample: systList = systList + [ "PUUp", "PUDown"]+systJets
+        #if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst: systList = ["norm"]
 
         # Counts
         counts = np.ones_like(events['event'], dtype=float)
- 
+
         # Initialize the out object, channels and levels
         hout = self.accumulator.identity()
         channels = ['em', 'ee', 'mm'] 
         levels = ['dilep', 'g2jets', 'offZ', 'metcut']
-
         # Add selections...
-        selections = PackedSelection(dtype='uint64')
+
+        #Adding secuancial preselection for debugging
+        printevents = True
+        if printevents == True:
+           np.set_printoptions(threshold=sys.maxsize)
+           printarray = np.array([events.event,events.luminosityBlock,events.run,trig,events.isem,events.isee,events.ismm,]) 
+           #print(printarray.transpose())
+           selections = PackedSelection(dtype='uint64')
+           print("counts per selec level")
+           selections.add("lumimask", lumi_mask)
+           selections.add("trigger", trig)
+           selections.add("metfilter", METfilters)
+           cutlum = selections.all(*["lumimask"])
+           print("lumimask",len(counts[cutlum]))
+           cuttrig = selections.all(*["lumimask","trigger"])
+           print("trigger",len(counts[cuttrig]))
+           cutmetfilter = selections.all(*["lumimask","trigger","metfilter"])
+           print("metfilter",len(counts[cutmetfilter]))
+           selections.add("OS", ( (events.isOS)))
+           cutos = selections.all(*["lumimask","trigger","em","OS"])
+           print("em_os",len(counts[cutos]))
+           selections.add("mll", ( (mllvalues>20)))
+           selections.add("ptl1l2", ( (leadingpt>35) & (subleadingpt>35)))
+           cutpt = selections.all(*["lumimask","trigger","em","OS","ptl1l2"])
+           cutmll = selections.all(*["lumimask","trigger","em","OS","ptl1l2","mll"])
+           print("pt",len(counts[cutpt]))
+           print("mll",len(counts[cutmll]))
         selections.add("em", ( (events.isem)&(trig)))
         selections.add("ee", ( (events.isee)&(trig)))
         selections.add("mm", ( (events.ismm)&(trig)))
         selections.add("OS", ( (events.isOS)))
         selections.add("SS", ( (events.isSS)))
- 
-        selections.add("dilep",  (njets >= 0)&(leadingpt>25)&(lumi_mask))
+        selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(lumi_mask))
         selections.add("g2jets", (njets >= 2))
         selections.add("0jet", (njets == 0))
         selections.add("1jet", (njets == 1))
@@ -300,6 +326,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("offZ",   ( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("mll", ( (mllvalues>20)))
+        #printarray = np.array(events.event[cut])
+        #print(printarray)
 
         if not isData and doJES: # JES systematics
           njetsJESUp = (ak.num(goodJetsJESUp))
@@ -334,7 +362,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
               hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
           for lev in levels:
-            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']
+            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']  
             cutsOS = cuts + ['OS']
             cutsSS = cuts + ['SS']
             cut   = selections.all(*cutsOS)

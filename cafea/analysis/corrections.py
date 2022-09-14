@@ -261,8 +261,8 @@ def AttachMuonSFsRun3(muons):
   muon_sf_err     = SFevaluator['MuonTightSF_Run3_er'](np.abs(eta),pt)
   
   muons['sf_nom_muon'] = muon_sf
-  muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_sf + muon_sf_err)
-  muons['sf_lo_muon']  = (muon_sf - muon_sf_err) * (muon_sf - muon_sf_err)
+  muons['sf_hi_muon']  = muon_sf + muon_sf_err
+  muons['sf_lo_muon']  = muon_sf - muon_sf_err
   muons['sf_nom_elec'] = ak.ones_like(muon_sf)
   muons['sf_hi_elec']  = ak.ones_like(muon_sf)
   muons['sf_lo_elec']  = ak.ones_like(muon_sf)
@@ -274,8 +274,8 @@ def AttachElecSFsRun3(electrons):
   elec_sf_err     = SFevaluator['ElecTightSF_Run3_er'](np.abs(eta),pt)
   
   electrons['sf_nom_elec'] = elec_sf
-  electrons['sf_hi_elec']  = (elec_sf + elec_sf_err) * (elec_sf + elec_sf_err)
-  electrons['sf_lo_elec']  = (elec_sf - elec_sf_err) * (elec_sf - elec_sf_err)
+  electrons['sf_hi_elec']  = elec_sf + elec_sf_err
+  electrons['sf_lo_elec']  = elec_sf - elec_sf_err
   electrons['sf_nom_muon'] = ak.ones_like(elec_sf)
   electrons['sf_hi_muon']  = ak.ones_like(elec_sf)
   electrons['sf_lo_muon']  = ak.ones_like(elec_sf)

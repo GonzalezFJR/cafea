@@ -149,13 +149,19 @@ exclude_dict = {
         "MuonEG"         : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"],
         "SingleMuon"     : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"] + dataset_dict["2018"]["MuonEG"],
     },
+    #"2022": {
+    #    "Muon"           : [],
+    #    "SingleMuon"     : [],
+    #    "DoubleMuon"     : dataset_dict["2022"]["SingleMuon"],
+    #    "EGamma"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"],
+    #    "MuonEG"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
+        #"SingleElectron" : dataset_dict["2016"]["DoubleMuon"] + dataset_dict["2016"]["DoubleEG"] + dataset_dict["2016"]["MuonEG"] + dataset_dict["2016"]["SingleMuon"],},
     "2022": {
-        "Muon"           : [],
-        "SingleMuon"     : [],
-        "DoubleMuon"     : dataset_dict["2022"]["SingleMuon"],
-        "EGamma"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"],
-        "MuonEG"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
-        #"SingleElectron" : dataset_dict["2016"]["DoubleMuon"] + dataset_dict["2016"]["DoubleEG"] + dataset_dict["2016"]["MuonEG"] + dataset_dict["2016"]["SingleMuon"],
+        "MuonEG"         : [],
+        "DoubleMuon"     : dataset_dict["2022"]["MuonEG"],
+        "Muon"           : dataset_dict["2022"]["MuonEG"],
+        "EGamma"         : dataset_dict["2022"]["MuonEG"] + dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["Muon"],
+        "SingleMuon"     : dataset_dict["2022"]["MuonEG"] + dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
     }
 }
 

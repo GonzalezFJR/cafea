@@ -248,7 +248,15 @@ def PadSFs2leps(events, leps, name):
   events[name      ] = ak.fill_none(padded_leps_2[:,0].sf_nom, 1)*ak.fill_none(padded_leps_2[:,1].sf_nom, 1)
   events[name+'_hi'] = ak.fill_none(padded_leps_2[:,0].sf_hi, 1) *ak.fill_none(padded_leps_2[:,1].sf_hi, 1)
   events[name+'_lo'] = ak.fill_none(padded_leps_2[:,0].sf_lo, 1) *ak.fill_none(padded_leps_2[:,1].sf_lo, 1)
-  
+
+def AddSFsRun3(events, leps):
+  padded_FOs = ak.pad_none(leps, 2)
+  events['sf_muon'] = ak.fill_none(padded_FOs[:,0].sf_nom_muon*padded_FOs[:,1].sf_nom_muon, 1)
+  events['sf_elec'] = ak.fill_none(padded_FOs[:,0].sf_nom_elec*padded_FOs[:,1].sf_nom_elec, 1)
+  events['sf_hi_muon'] = ak.fill_none(padded_FOs[:,0].sf_hi_muon*padded_FOs[:,1].sf_hi_muon, 1)
+  events['sf_hi_elec'] = ak.fill_none(padded_FOs[:,0].sf_hi_elec*padded_FOs[:,1].sf_hi_elec, 1)
+  events['sf_lo_muon'] = ak.fill_none(padded_FOs[:,0].sf_lo_muon*padded_FOs[:,1].sf_lo_muon, 1)
+  events['sf_lo_elec'] = ak.fill_none(padded_FOs[:,0].sf_lo_elec*padded_FOs[:,1].sf_lo_elec, 1)
 
 # 2l selection (we do not make the ss requirement here)
 def add2lMaskAndSFs(events, year, isData, sampleType):

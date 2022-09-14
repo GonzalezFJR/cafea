@@ -147,8 +147,8 @@ extLepSF.add_weight_sets(["ElecLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathF
 extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
 
 # tt Run3 - early private SF
-extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.txt_EGM2D.root')])
-extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3.txt_EGM2D.root')])
+#extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.txt_EGM2D.root')])
+#extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3.txt_EGM2D.root')])
 
 extLepSF.finalize()
 SFevaluator = extLepSF.make_evaluator()

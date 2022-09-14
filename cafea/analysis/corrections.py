@@ -147,8 +147,10 @@ extLepSF.add_weight_sets(["ElecLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathF
 extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
 
 # tt Run3 - early private SF
-extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.txt_EGM2D.root')])
-extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3.txt_EGM2D.root')])
+extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
+extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
+extLepSF.add_weight_sets(["MuonTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
+extLepSF.add_weight_sets(["ElecTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
 
 extLepSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
@@ -252,9 +254,31 @@ def AttachElecPOGSFs(electrons):
   electrons['sf_lo']  = electrons['sf_nom'] - err
 
 
+def AttachMuonSFsRun3(muons):
+  eta = muons.eta
+  pt = muons.pt
+  muon_sf         = SFevaluator['MuonTightSF_Run3'](np.abs(eta),pt)
+  muon_sf_err     = SFevaluator['MuonTightSF_Run3_er'](np.abs(eta),pt)
+  
+  muons['sf_nom_muon'] = muon_sf
+  muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_sf + muon_sf_err)
+  muons['sf_lo_muon']  = (muon_sf - muon_sf_err) * (muon_sf - muon_sf_err)
+  muons['sf_nom_elec'] = ak.ones_like(muon_sf)
+  muons['sf_hi_elec']  = ak.ones_like(muon_sf)
+  muons['sf_lo_elec']  = ak.ones_like(muon_sf)
 
-
-
+def AttachElecSFsRun3(electrons):
+  eta = electrons.eta
+  pt = electrons.pt
+  elec_sf         = SFevaluator['ElecTightSF_Run3'](np.abs(eta),pt)
+  elec_sf_err     = SFevaluator['ElecTightSF_Run3_er'](np.abs(eta),pt)
+  
+  electrons['sf_nom_elec'] = elec_sf
+  electrons['sf_hi_elec']  = (elec_sf + elec_sf_err) * (elec_sf + elec_sf_err)
+  electrons['sf_lo_elec']  = (elec_sf - elec_sf_err) * (elec_sf - elec_sf_err)
+  electrons['sf_nom_muon'] = ak.ones_like(elec_sf)
+  electrons['sf_hi_muon']  = ak.ones_like(elec_sf)
+  electrons['sf_lo_muon']  = ak.ones_like(elec_sf)
 
 
 
@@ -660,3 +684,4 @@ def GetElecScale5TeV(elec, run=306936, isData=False):
 
 #escale = ESevaluator['correction/scale_value'](np.array([0.2, 1.4, 1.5]), np.array([0.55, 0.95, 0.99]), np.array([306935,306935,306935]))
 #print(escale)
+

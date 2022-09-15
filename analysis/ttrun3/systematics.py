@@ -42,7 +42,6 @@ p.AddExtraBkgHist([hdampup, hdampdo], add=True)
 
 ### Create xsec object
 experimental = ['lepSF_muon', 'lepSF_elec']
-<<<<<<< HEAD
 modeling = ['ISR', 'FSR','hdamp'] # ['UE', 'hdamp', 'ISR', 'FSR']
 x = xsec('tt', 0.06, {'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3}, plotter=p, verbose=1, thxsec=921, experimental=experimental, modeling=modeling, categories=categories)
 x.SetNames(names)

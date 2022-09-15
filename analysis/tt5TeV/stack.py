@@ -10,7 +10,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   if not CheckHistoCategories(plt.hists[var], categories):
     print(f'Nop... [{var}] cat = ', categories)
     return
-  plt.ResetExtraBkg()
+  plt.ResetExtraBkg(0)
   plt.SetRatio(doRatio)
   plt.plotData = doData
   plt.SetCategories(categories)
@@ -18,10 +18,12 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   plt.SetRegion(label)
   plt.SetOutpath(outpath)
   plt.SetOutput(output)
-  plt.SetLogY()
+  #plt.SetLogY()
   rebin = None; xtit = ''; ytit = ''
   if doQCD: 
     hqcd = qcd.GetQCD(var, categories)
+    hqcdup = qcd.GetQCD(var, categories,  1)
+    hqcddo = qcd.GetQCD(var, categories, -1)
 
   b0 = None; bN = None
   if var in ['minDRjj', 'minDRuu']:
@@ -40,10 +42,19 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
 
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
-    if doQCD: hqcd = Rebin(hqcd, var, b0, bN, includeLower=True, includeUpper=True)
+    if doQCD: 
+      hqcd   = Rebin(hqcd, var, b0, bN, includeLower=True, includeUpper=True)
+      hqcdup = Rebin(hqcdup, var, b0, bN, includeLower=True, includeUpper=True)
+      hqcddo = Rebin(hqcddo, var, b0, bN, includeLower=True, includeUpper=True)
     
+  if doQCD: 
+    hqcd.add(hqcdup)
+    hqcd.add(hqcddo)
+    print('QCDUp   = ', hqcdup.integrate('process', 'QCD').integrate('syst', 'QCDUp'  ).values(overflow='all'))
+    print('QCDDown = ', hqcddo.integrate('process', 'QCD').integrate('syst', 'QCDDown').values(overflow='all'))
+    print('QCD     = ', hqcd  .integrate('process', 'QCD').integrate('syst', 'norm'   ).values(overflow='all'))
+    plt.AddExtraBkgHist(hqcd)
 
-  if doQCD: plt.AddExtraBkgHist(hqcd)
   aname = None
   if   var == 'l0pt': aname = 'lep0pt'
   elif var == 'l0eta': aname = 'lep0eta'
@@ -62,11 +73,11 @@ def Print2lplots():
 
 def Print1lplots():
   outp = outpath+'/1l/'
-  for c in ['e', 'm', ['e','m']]: #, 'e_fake', 'm_fake']:
+  for c in ['m']:#, 'm']:#, ['e','m']]: #, 'e_fake', 'm_fake']:
     doQCD = not 'fake' in c
     doRatio = not 'fake' in c
     #for l in ['incl', 'g2jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
-    for l in ['2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
+    for l in ['2j1b', '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
       clab = c if not isinstance(c, list) else 'l'
       outp = outpath+'/1l/'+clab+'/'+l+'/'

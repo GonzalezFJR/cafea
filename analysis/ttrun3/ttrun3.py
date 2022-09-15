@@ -93,8 +93,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         isSystSample = ('mtop' in histAxisName) or ('hdamp' in histAxisName) or ('UE' in histAxisName)
         doPS         = (histAxisName in ['tt', 'ttPS', 'TTTo2L2Nu']) and events.PSWeight is not None and len(events.PSWeight[0])>=4
         doPDFunc = "sumPDFWeights" in self._samples[dataset]
-        if histAxisName in ['tt', 'ttPS', 'TTTo2L2Nu']: doSyst = True
-        else: doSyst = False
+        #if histAxisName in ['tt', 'ttPS', 'TTTo2L2Nu']: doSyst = True
+        #else: doSyst = False
         # Golden JSON !
         golden_json_path = cafea_path("data/goldenJsons/Cert_Collisions2022_356309_356615_Golden.json")
         lumi_mask = np.ones_like(events['event'], dtype=bool)

@@ -11,11 +11,12 @@ names = {
   #'trigSF' : 'Trigger efficiencies',
   'JES' : 'Jet energy scale',
   #'UE' : 'Underlying event',
-  'hdamp' : '$h_\mathrm{damp}$',
+  'hdamp' : 'ME/PS matching',#$h_\mathrm{damp}$',
   'ISR' : 'Initial-state radiation',
   'FSR' : 'Final-state radiation',
   #'DY' : 'Drell--Yan',
   'PU' : 'Pileup reweighting',
+  'semilep' : r'$t\bar{t} \rightarrow 1 \ell$',
 }
 
 #path = 'histos/run3/5jun2022/'

@@ -128,19 +128,20 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
         # Muon selection
-        mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
-        mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        #mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
+        #mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
         mu['isGood'] = isMuonPOGT(mu, ptCut=20)
+        mu['isExtra'] = isMuonPOGT(mu, ptCut=10) #forveto
 
         # Electron selection
-        e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
-        e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        #e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
+        #e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
         if not hasattr(events, "fixedGridRhoFastjetAll"): events["fixedGridRhoFastjetAll"] = np.zeros_like(events, dtype=float)
         AttachCutBasedTight(e, events.fixedGridRhoFastjetAll)
         e['isGood'] = isElectronTight(e, ptCut=20, etaCut=2.4)
-     
+        e['isExtra'] = isElectronTight(e, ptCut=10, etaCut=2.4) #forveto
 
-        # Build loose collections
+        # Build good collections
         #m_sel = mu[mu.isLoose & mu.isMVA]
         #e_sel = e[e.isLoose & e.isMVA]
         m_sel = mu[mu.isGood]
@@ -149,9 +150,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
 
+        # Build loose collections
+        m_extra = mu[mu.isExtra]
+        e_extra = e[e.isExtra]
         #print('Num elecs = ', np.sum(ak.num(e_sel)), '\n\n')
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
+        l_sel_extra = ak.with_name(ak.concatenate([e_extra, m_extra], axis=1), 'PtEtaPhiMCandidate')
         llpairs = ak.combinations(l_sel, 2, fields=["l0","l1"])
         mll = (llpairs.l0+llpairs.l1).mass # Invmass for leading two leps
         deltaphi = (llpairs.l0.delta_phi(llpairs.l1))/np.pi
@@ -178,11 +183,11 @@ class AnalysisProcessor(processor.ProcessorABC):
           #PadSFs2leps(events, e_sel, "elecsf")
           #PadSFs2leps(events, m_sel, "muonsf")
 
-        events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1)
-        events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0)
-        events['isee'] = (ak.num(m_sel) == 0) & (ak.num(e_sel) == 2)
-        events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1)
-        events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1)
+        events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1) & (ak.num(l_sel_extra) <= 2) 
+        events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0) & (ak.num(l_sel_extra) <= 2)
+        events['isee'] = (ak.num(m_sel) == 0) & (ak.num(e_sel) == 2) & (ak.num(l_sel_extra) <= 2)
+        events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1) & (ak.num(l_sel_extra) <= 2)
+        events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1) & (ak.num(l_sel_extra) <= 2)
         #GetTriggerSF(2018, events, l0, l1) # from top EFT
 
         if not isData:

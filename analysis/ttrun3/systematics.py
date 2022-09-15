@@ -51,7 +51,7 @@ scale = Get1binScaleUnc(path, categories=categoriesPDF, sample='TTTo2L2Nu', doPr
 x.AddModUnc('PDF$+\\alpha_{S}$', pdf, isRelative=True)
 x.AddModUnc('$\mu_R, \mu_F$ scales', scale, isRelative=True)
 
-jecs = GetJECSystHistos(path, 'TTTo2L2Nu_withJEC', var='counts', categories=categories)
+jecs = GetJECSystHistos(path, 'variations/TTTo2L2Nu_withJEC', var='counts', categories=categories)
 x.AddExpUnc('JEC', jecs, isRelative=True)
 x.ComputeXsecUncertainties()
 

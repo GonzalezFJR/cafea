@@ -281,7 +281,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Add selections...
 
         #Adding secuancial preselection for debugging
-        printevents = True
+        printevents = False
         if printevents == True:
            np.set_printoptions(threshold=sys.maxsize)
            printarray = np.array([events.event,events.luminosityBlock,events.run,trig,events.isem,events.isee,events.ismm,]) 
@@ -310,6 +310,7 @@ class AnalysisProcessor(processor.ProcessorABC):
            cutmll = selections.all(*["lumimask","trigger","em","OS","ptl1l2","mll"])
            print("pt",len(counts[cutpt]))
            print("mll",len(counts[cutmll]))
+        selections = PackedSelection(dtype='uint64')
         selections.add("em", ( (events.isem)&(trig)&(METfilters)))
         selections.add("ee", ( (events.isee)&(trig)&(METfilters)))
         selections.add("mm", ( (events.ismm)&(trig)&(METfilters)))

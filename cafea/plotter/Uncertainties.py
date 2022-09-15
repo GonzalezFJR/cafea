@@ -197,7 +197,7 @@ class UncertHisto:
       for pr in process: self.SetNormUncForProcess(pr, fact)
     nominal = self.GetNominal(process)
     normup = nominal*(1+fact)
-    normdo = normial*(1-fact)
+    normdo = nominal*(1-fact)
     self.pr[process]['norm'] = {'up':normup, 'down':normdo}
     return
 

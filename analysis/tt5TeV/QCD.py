@@ -104,10 +104,17 @@ class QCD:
 
   def GetQCD(self, var, categories={}, sys=0):
     fact = self.GetNormalization(categories, sys)
+    print('sys = ', sys, 'fact = ', fact)
     h = self.QCDhist[var].copy()
     for cat in categories: 
       h = h.integrate(cat, categories[cat])
     h.scale(fact)
+    if sys==1: # Up
+      #h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}, 'keep']])
+      h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+    elif sys==-1: # Down
+      #h = GroupKeepOrder(h, ['syst', 'syst', {'QCDDown':'norm'}])
+      h = GroupKeepOrder(h, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
     return h
 
 

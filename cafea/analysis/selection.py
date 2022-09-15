@@ -227,6 +227,11 @@ def trgPassNoOverlap(events,is_data,dataset,year):
     # Return true if passes trg and does not overlap
     return (trg_passes & ~trg_overlaps)
 
+def PassMETfilters(events,isData):
+    filter_flags = events.Flag
+    filters = filter_flags.goodVertices & filter_flags.globalSuperTightHalo2016Filter & filter_flags.HBHENoiseFilter & filter_flags.HBHENoiseIsoFilter & filter_flags.EcalDeadCellTriggerPrimitiveFilter & filter_flags.BadPFMuonFilter & (isData | filter_flags.eeBadScFilter)
+    return filters
+
 # Add SFs for tt 5 TeV
 def AddSFs(events, leps):
   padded_leps_1 = ak.pad_none(leps, 1)

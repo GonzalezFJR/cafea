@@ -20,7 +20,7 @@ names = {
 
 #path = 'histos/run3/5jun2022/'
 ### Fix categories
-categories = {'channel':'em', 'level': 'g2jets', 'sign':'OS'}#, 'syst':'norm'}
+categories = {'channel':'em', 'level': 'dilep', 'sign':'OS'}#, 'syst':'norm'}
 categoriesPDF = {'channel':'em', 'level': 'g2jets'}#, 'syst':'norm'}
 processDic = {
   'tt': 'TTTo2L2Nu',

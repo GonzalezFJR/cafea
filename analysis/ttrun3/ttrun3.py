@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import awkward as ak
 import coffea
+import sys
 np.seterr(divide='ignore', invalid='ignore', over='ignore')
 from coffea import hist, processor
 from coffea.util import load, save
@@ -127,19 +128,20 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu["btagDeepB"] = ak.fill_none(mu.matched_jet.btagDeepB, -99)
 
         # Muon selection
-        mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
-        mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
-        mu['isGood'] = isMuonPOGT(mu, ptCut=35)
+        #mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumId, mu.btagDeepB, ptCut=20, etaCut=2.4)
+        #mu["isMVA"]   = MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        mu['isGood'] = isMuonPOGT(mu, ptCut=20)
+        mu['isExtra'] = isMuonPOGT(mu, ptCut=10) #forveto
 
         # Electron selection
-        e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
-        e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        #e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaNoIso_WPL, 20, 2.4)
+        #e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
         if not hasattr(events, "fixedGridRhoFastjetAll"): events["fixedGridRhoFastjetAll"] = np.zeros_like(events, dtype=float)
         AttachCutBasedTight(e, events.fixedGridRhoFastjetAll)
-        e['isGood'] = isElectronTight(e, ptCut=35, etaCut=2.4)
-     
+        e['isGood'] = isElectronTight(e, ptCut=20, etaCut=2.4)
+        e['isExtra'] = isElectronTight(e, ptCut=10, etaCut=2.4) #forveto
 
-        # Build loose collections
+        # Build good collections
         #m_sel = mu[mu.isLoose & mu.isMVA]
         #e_sel = e[e.isLoose & e.isMVA]
         m_sel = mu[mu.isGood]
@@ -148,9 +150,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
 
+        # Build loose collections
+        m_extra = mu[mu.isExtra]
+        e_extra = e[e.isExtra]
         #print('Num elecs = ', np.sum(ak.num(e_sel)), '\n\n')
 
         l_sel = ak.with_name(ak.concatenate([e_sel, m_sel], axis=1), 'PtEtaPhiMCandidate')
+        l_sel_extra = ak.with_name(ak.concatenate([e_extra, m_extra], axis=1), 'PtEtaPhiMCandidate')
         llpairs = ak.combinations(l_sel, 2, fields=["l0","l1"])
         mll = (llpairs.l0+llpairs.l1).mass # Invmass for leading two leps
         deltaphi = (llpairs.l0.delta_phi(llpairs.l1))/np.pi
@@ -160,8 +166,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         l1 = l_sel_padded[:,1]
 
         leadinglep = l_sel[ak.argmax(l_sel.pt, axis=-1, keepdims=True)]
+        subleadinglep = l_sel[ak.argmin(l_sel.pt, axis=-1, keepdims=True)]
         leadingpt = ak.flatten(leadinglep.pt) #ak.pad_none(l_sel.pt, 1)
-
+        subleadingpt = ak.flatten(subleadinglep.pt) #ak.pad_none(l_sel.pt, 1)
         ### Attach scale factors
         if not isData:
           #AttachElectronSF(e_sel,year='2018')
@@ -176,11 +183,11 @@ class AnalysisProcessor(processor.ProcessorABC):
           #PadSFs2leps(events, e_sel, "elecsf")
           #PadSFs2leps(events, m_sel, "muonsf")
 
-        events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1)
-        events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0)
-        events['isee'] = (ak.num(m_sel) == 0) & (ak.num(e_sel) == 2)
-        events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1)
-        events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1)
+        events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1) & (ak.num(l_sel_extra) <= 2) 
+        events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0) & (ak.num(l_sel_extra) <= 2)
+        events['isee'] = (ak.num(m_sel) == 0) & (ak.num(e_sel) == 2) & (ak.num(l_sel_extra) <= 2)
+        events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1) & (ak.num(l_sel_extra) <= 2)
+        events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1) & (ak.num(l_sel_extra) <= 2)
         #GetTriggerSF(2018, events, l0, l1) # from top EFT
 
         if not isData:
@@ -232,7 +239,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         nbtagsm = ak.num(goodJets[isBtagJetsMedium])       
         
         trig = trgPassNoOverlap(events,isData,dataset,year)  
-        
+        METfilters = PassMETfilters(events,isData)
         # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
         if (isData): genw = np.ones_like(events["event"])
         else:        genw = events["genWeight"]
@@ -262,27 +269,59 @@ class AnalysisProcessor(processor.ProcessorABC):
         systJets = []#['JESUp', 'JESDo'] if doJES else []
         #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+
         if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown"]
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
+
         if not doSyst: systList = ["norm"]
 
         # Counts
         counts = np.ones_like(events['event'], dtype=float)
- 
+
         # Initialize the out object, channels and levels
         hout = self.accumulator.identity()
         channels = ['em', 'ee', 'mm'] 
         levels = ['dilep', 'g2jets', 'offZ', 'metcut','g2jetsg1b']
 
         # Add selections...
+
+        #Adding secuancial preselection for debugging
+        printevents = False
+        if printevents == True:
+           np.set_printoptions(threshold=sys.maxsize)
+           printarray = np.array([events.event,events.luminosityBlock,events.run,trig,events.isem,events.isee,events.ismm,]) 
+           #print(printarray.transpose())
+           selections = PackedSelection(dtype='uint64')
+           print("counts per selec level")
+           selections.add("lumimask", lumi_mask)
+           selections.add("trigger", trig)
+           selections.add("metfilter", METfilters)
+           cutlum = selections.all(*["lumimask"])
+           print("lumimask",len(counts[cutlum]))
+           cuttrig = selections.all(*["lumimask","trigger"])
+           print("trigger",len(counts[cuttrig]))
+           cutmetfilter = selections.all(*["lumimask","trigger","metfilter"])
+           print("metfilter",len(counts[cutmetfilter]))
+           selections.add("OS", ( (events.isOS)))
+           selections.add("em", ( (events.isem)))
+           cutos = selections.all(*["lumimask","trigger","em","OS"])
+           print("em_os",len(counts[cutos]))
+           mllvalues = np.where(ak.num(mll)==0, [[0]], mll)
+           mllvalues = np.where(ak.num(mllvalues)>1, [[0]], mllvalues)
+           mllvalues = ak.flatten(mllvalues, axis=1)
+           selections.add("mll", ( (mllvalues>20)))
+           selections.add("ptl1l2", ( (leadingpt>35) & (subleadingpt>35)))
+           cutpt = selections.all(*["lumimask","trigger","em","OS","ptl1l2"])
+           cutmll = selections.all(*["lumimask","trigger","em","OS","ptl1l2","mll"])
+           print("pt",len(counts[cutpt]))
+           print("mll",len(counts[cutmll]))
         selections = PackedSelection(dtype='uint64')
-        selections.add("em", ( (events.isem)&(trig)))
-        selections.add("ee", ( (events.isee)&(trig)))
-        selections.add("mm", ( (events.ismm)&(trig)))
+        selections.add("em", ( (events.isem)&(trig)&(METfilters)))
+        selections.add("ee", ( (events.isee)&(trig)&(METfilters)))
+        selections.add("mm", ( (events.ismm)&(trig)&(METfilters)))
         selections.add("OS", ( (events.isOS)))
         selections.add("SS", ( (events.isSS)))
- 
-        selections.add("dilep",  (njets >= 0)&(leadingpt>25)&(lumi_mask))
+        selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(lumi_mask))
         selections.add("g2jets", (njets >= 2))
         selections.add("g2jetsg1b", (njets >= 2)&(nbtagsm>=1))
         selections.add("0jet", (njets == 0))
@@ -296,6 +335,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("offZ",   ( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
         selections.add("mll", ( (mllvalues>20)))
+        #printarray = np.array(events.event[cut])
+        #print(printarray)
 
         ##### Loop over the hists we want to fill
         #for syst in systList:
@@ -316,7 +357,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
               hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weights)
           for lev in levels:
-            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']
+            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']  
             cutsOS = cuts + ['OS']
             cutsSS = cuts + ['SS']
             cut   = selections.all(*cutsOS)

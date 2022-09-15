@@ -66,6 +66,7 @@ colordic ={
   'Diboson' : '#fdffcb',
 }
 
+
 colors = [colordic[k] for k in colordic.keys()]
 
 def GetChLab(channel):

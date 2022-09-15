@@ -6,6 +6,7 @@ from config import *
 
 variation='lepSF_elec'
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi)
+
 outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU/syst/' 
 plt.SetOutpath(outpath)
 plt.SetLumi(lumi, "pb$^{-1}$", "13.6 TeV")

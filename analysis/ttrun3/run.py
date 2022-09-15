@@ -60,7 +60,7 @@ if __name__ == '__main__':
   if jobs:
     command = " ".join(sys.argv[:]).replace(" --jobs ", " ").replace(" -j ", " ")
     if not command.startswith('python '): command = 'python ' +  command
-    commandJob = 'sbatch -p %s -c %i --wrap "%s"'%(queue, nworkers, command)
+    commandJob = 'sbatch -p %s -c %i --wrap "%s"'%(queue, nworkers, command.replace("-j",""))
     print(commandJob)
     os.system(commandJob)
     exit()

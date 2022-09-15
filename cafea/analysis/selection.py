@@ -96,8 +96,31 @@ dataset_dict = {
             "Mu8_DiEle12_CaloIdL_TrackIdL_DZ",
             "DiMu9_Ele9_CaloIdL_TrackIdL_DZ",
         ]
-    }
+    },
 
+    "2022" : {
+        "SingleMuon" : [
+            "IsoMu24",
+        ],
+        "DoubleMuon" : [
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8" 
+        ],
+        "EGamma" : [
+            'Ele32_WPTight_Gsf',
+            "Ele23_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "DoubleEle25_CaloIdL_MW",
+        ],
+        "MuonEG" : [
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+        ],
+        "Muon" : [
+            "Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ",
+            "Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL",
+            "Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",
+            "IsoMu24",
+        ]
+    },
 }
 
 
@@ -126,6 +149,20 @@ exclude_dict = {
         "MuonEG"         : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"],
         "SingleMuon"     : dataset_dict["2018"]["DoubleMuon"] + dataset_dict["2018"]["EGamma"] + dataset_dict["2018"]["MuonEG"],
     },
+    #"2022": {
+    #    "Muon"           : [],
+    #    "SingleMuon"     : [],
+    #    "DoubleMuon"     : dataset_dict["2022"]["SingleMuon"],
+    #    "EGamma"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"],
+    #    "MuonEG"         : dataset_dict["2022"]["SingleMuon"]+dataset_dict["2022"]["Muon"]+dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
+        #"SingleElectron" : dataset_dict["2016"]["DoubleMuon"] + dataset_dict["2016"]["DoubleEG"] + dataset_dict["2016"]["MuonEG"] + dataset_dict["2016"]["SingleMuon"],},
+    "2022": {
+        "MuonEG"         : [],
+        "DoubleMuon"     : dataset_dict["2022"]["MuonEG"],
+        "Muon"           : dataset_dict["2022"]["MuonEG"],
+        "EGamma"         : dataset_dict["2022"]["MuonEG"] + dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["Muon"],
+        "SingleMuon"     : dataset_dict["2022"]["MuonEG"] + dataset_dict["2022"]["DoubleMuon"] + dataset_dict["2022"]["EGamma"]
+    }
 }
 
 trigttbar = {
@@ -135,8 +172,8 @@ trigttbar = {
     "em" : ['Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ',
             'Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL'],
     "ee" : ['Ele23_Ele12_CaloIdL_TrackIdL_IsoVL',
-            'DoubleEle25_CaloIdL_MW',
-            'Ele32_WPTight_Gsf'],
+            'DoubleEle25_CaloIdL_MW'],
+            #'Ele32_WPTight_Gsf'],
     "mm" : ['Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8'],
   }
 }
@@ -190,6 +227,11 @@ def trgPassNoOverlap(events,is_data,dataset,year):
     # Return true if passes trg and does not overlap
     return (trg_passes & ~trg_overlaps)
 
+def PassMETfilters(events,isData):
+    filter_flags = events.Flag
+    filters = filter_flags.goodVertices & filter_flags.globalSuperTightHalo2016Filter & filter_flags.HBHENoiseFilter & filter_flags.HBHENoiseIsoFilter & filter_flags.EcalDeadCellTriggerPrimitiveFilter & filter_flags.BadPFMuonFilter & (isData | filter_flags.eeBadScFilter)
+    return filters
+
 # Add SFs for tt 5 TeV
 def AddSFs(events, leps):
   padded_leps_1 = ak.pad_none(leps, 1)
@@ -206,7 +248,15 @@ def PadSFs2leps(events, leps, name):
   events[name      ] = ak.fill_none(padded_leps_2[:,0].sf_nom, 1)*ak.fill_none(padded_leps_2[:,1].sf_nom, 1)
   events[name+'_hi'] = ak.fill_none(padded_leps_2[:,0].sf_hi, 1) *ak.fill_none(padded_leps_2[:,1].sf_hi, 1)
   events[name+'_lo'] = ak.fill_none(padded_leps_2[:,0].sf_lo, 1) *ak.fill_none(padded_leps_2[:,1].sf_lo, 1)
-  
+
+def AddSFsRun3(events, leps):
+  padded_FOs = ak.pad_none(leps, 2)
+  events['sf_muon'] = ak.fill_none(padded_FOs[:,0].sf_nom_muon*padded_FOs[:,1].sf_nom_muon, 1)
+  events['sf_elec'] = ak.fill_none(padded_FOs[:,0].sf_nom_elec*padded_FOs[:,1].sf_nom_elec, 1)
+  events['sf_hi_muon'] = ak.fill_none(padded_FOs[:,0].sf_hi_muon*padded_FOs[:,1].sf_hi_muon, 1)
+  events['sf_hi_elec'] = ak.fill_none(padded_FOs[:,0].sf_hi_elec*padded_FOs[:,1].sf_hi_elec, 1)
+  events['sf_lo_muon'] = ak.fill_none(padded_FOs[:,0].sf_lo_muon*padded_FOs[:,1].sf_lo_muon, 1)
+  events['sf_lo_elec'] = ak.fill_none(padded_FOs[:,0].sf_lo_elec*padded_FOs[:,1].sf_lo_elec, 1)
 
 # 2l selection (we do not make the ss requirement here)
 def add2lMaskAndSFs(events, year, isData, sampleType):

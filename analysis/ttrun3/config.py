@@ -32,38 +32,40 @@ level = args.level
 output = args.output
 doData = args.data
 outpatho = args.outpath
-if outpatho is None: outpatho = '26jul2022_eraBC/'
+if outpatho is None: outpatho = ''
 if not outpatho.endswith('/'): outpatho += '/'
 syst = 'norm'
 
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
-lumi = 129 + 93.7#142.8#93.7 #+142.8 #129 + 93.7; #142.8#129 + 93.7; # pb
+lumi =  1200#314.6##142.8#93.7 #+142.8 #129 + 93.7; #142.8#129 + 93.7; # pb
 year = '2022'
 
 
 processDic = {
   'tt': 'TTTo2L2Nu',
   'tW': 'tbarW, tW',
-  'Nonprompt': 'WJetsToLNu, TTToSemiLep',
-  'DY': 'DYJetsToLL_M50, DY_M10to50',
-  'Diboson' : 'WW, WZ, ZZTo2L2Nu',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
-  'data' : 'MuonEG, MuonEG_2022C', 
+  'semilep':'TTToSemiLeptoni',
+  'WJets':'WJetsToLNu',
+  'DY': 'DYJetsToLL_M50, DYJetsToLL_M10to50', 
+  'Diboson' : 'WW, WZ, ZZ',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
+  'data' : 'MuonEG,EGamma,DoubleMuon,SingleMuon,Muon'
 }
 
-#bkglist    = ['tt', 'tW', 'DY', 'Diboson']
-bkglist    = ['tt', 'tW', 'Nonprompt', 'DY', 'Diboson']
+bkglist    = ['tt', 'tW', 'semilep','WJets', 'DY', 'Diboson']
 #bkglist = list(processDic.keys())
-bkgnormunc = [0.05, 0.2, 0.2, 0.2, 0.3]
+bkgnormunc = [0.05, 0.15, 0.2, 0.3, 0.2, 0.3]
 
 colordic ={
   'tt' : '#cc0000',
   'tW' : '#ffc207',
-  'Nonprompt': '#47ce33',
+  'semilep': '#6c3b2a',
+  'WJets': '#47ce33',
   'DY': '#3b78cb',
   'Diboson' : '#fdffcb',
 }
+
 
 colors = [colordic[k] for k in colordic.keys()]
 
@@ -74,6 +76,7 @@ def GetChLab(channel):
 def GetLevLab(lev):
   if   lev == 'dilep'  : return ''
   elif lev == 'g2jets': return ', $\geq$2 jets'
+  elif lev == 'g2jetsg1b': return ', $\geq$2 jets, $\geq$1 b jet'
   return ''
 
 def GetModSystHisto(path, fname, systname, var=None, prname='tt', samplab='sample', prlab='process', systlab='syst', systnormlab='norm'):
@@ -88,4 +91,15 @@ def GetModSystHistos(path, fname, systname, var=None):
   up = GetModSystHisto(path, fname+'Up',   systname+'Up', var)
   do = GetModSystHisto(path, fname+'Down', systname+'Down', var)
   return up, do
+
+def GetJECSystHistos(path, fname, var, categories): # placeholder : up=down
+  #up  = GetModSystHisto(path, fname , systname+'Up', var)
+  #do  = GetModSystHisto(path, fname , systname+'Down', var).values()
+  nom=GetHisto(path+ 'TTTo2L2Nu.pkl.gz', var, categories)
+  nom=nom.integrate('syst','norm')
+  up=GetHisto(path+ fname+'.pkl.gz', var, categories)
+  up=up.integrate('syst','norm')
+  var=abs(nom.values()[('TTTo2L2Nu',)]-up.values()[('TTTo2L2Nu',)])/nom.values()[('TTTo2L2Nu',)]
+  return var
+
 

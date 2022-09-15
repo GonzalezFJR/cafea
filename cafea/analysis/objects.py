@@ -78,7 +78,7 @@ def ElecMVA(miniPFRelIso, lepMVA):
 def MuonLoose(pt, eta, dxy, dz, sip3d, mediumPrompt, btagDeepFlavB, ptCut = 20., etaCut = 2.4):
   pt_mask = (pt > ptCut)
   eta_mask = (abs(eta) < etaCut)
-  dxy_mask   = (abs(dxy) < 0.05)
+  dxy_mask   = (abs(dxy) < 0.02) #0.02 to mimic mediumprompt
   dz_mask    = (abs(dz)  < 0.1)
   sip3d_mask = (sip3d < 8)
   btag_mask = (btagDeepFlavB < 0.1522)
@@ -170,7 +170,10 @@ def isMuonPOGM(muons, ptCut=20, etaCut=2.4):
 
 def isMuonPOGL(muons, ptCut=20, etaCut=2.4):
   return ((muons.pfRelIso04_all < 0.4)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
-  
+
+def isMuonPOGT(muons, ptCut=20, etaCut=2.4):
+  return ((muons.tightId)&(muons.pfRelIso04_all < 0.15)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
+   
 def isElectronMVA(electrons, ptCut=20, etaCut=2.5):
   ''' Electron MVA eff = 0.80: https://twiki.cern.ch/twiki/bin/view/CMS/MultivariateElectronIdentificationRun2 '''
   return (electrons.mvaFall17V2Iso_WP80)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)
@@ -180,12 +183,17 @@ def isElectronCutBased(electrons, ptCut=20, etaCut=2.5):
   #return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
   return (electrons.isCutBasedTight)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
 
+def isElectronTight(electrons, ptCut=20, etaCut=2.5):
+  etasc = np.abs(electrons.eta+electrons.deltaEtaSC)
+  return ((electrons.pt > ptCut)&(electrons.cutBased == 4) & ((etasc > 1.566) | (etasc < 1.444)) & (np.abs(electrons.eta)<etaCut))
+
+
 #def ElectronCutBasedTight(electrons, ptCut=20, etaCut=2.5):
 #   ''' Full selection from https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2'''
 
 
 def AttachCutBasedTight(elec, rho):
-  etasc = np.abs(elec.eta - elec.deltaEtaSC)
+  etasc = np.abs(elec.eta + elec.deltaEtaSC)
   #rho = events.fixedGridRhoFastjetAll
   isBarrel = (etasc < 1.479)
 

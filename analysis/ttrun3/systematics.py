@@ -42,6 +42,7 @@ p.AddExtraBkgHist([hdampup, hdampdo], add=True)
 
 ### Create xsec object
 experimental = ['lepSF_muon', 'lepSF_elec']
+<<<<<<< HEAD
 modeling = ['ISR', 'FSR','hdamp'] # ['UE', 'hdamp', 'ISR', 'FSR']
 x = xsec('tt', 0.06, {'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3}, plotter=p, verbose=1, thxsec=921, experimental=experimental, modeling=modeling, categories=categories)
 x.SetNames(names)
@@ -50,7 +51,7 @@ scale = Get1binScaleUnc(path, categories=categoriesPDF, sample='TTTo2L2Nu', doPr
 x.AddModUnc('PDF$+\\alpha_{S}$', pdf, isRelative=True)
 x.AddModUnc('$\mu_R, \mu_F$ scales', scale, isRelative=True)
 
-jecs = GetJECSystHistos(path, 'TTTo2L2Nu_withJEC', var='counts', categories=categories)
+jecs = GetJECSystHistos(path, 'variations/TTTo2L2Nu_withJEC', var='counts', categories=categories)
 x.AddExpUnc('JEC', jecs, isRelative=True)
 x.ComputeXsecUncertainties()
 
@@ -62,5 +63,5 @@ x.ComputeXsecUncertainties()
 
 x.GetYieldsTable()
 x.GetUncTable(form='%1.2f')
-
+x.ComputeCrossSection()
 

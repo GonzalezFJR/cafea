@@ -596,6 +596,7 @@ class plotter:
     self.labels = []
     self.systList = None
     self.SetRebin()
+    self.SetNormUncDict()
     
   def SetRebin(self, var=None, rebin=None, bN=None, includeLower=True, includeUpper=True):
     self.rebin = rebin
@@ -858,7 +859,7 @@ class plotter:
 
   ######################################################################################
   ######## Uncertainties
-  def GetUncertaintiesFromHist(self, systAxisName="syst", systNomName="norm", stat=False, syst=None, hist=None):
+  def GetUncertaintiesFromHist(self, systAxisName="syst", systNomName="norm", stat=False, syst=None, hist=None, NormUncDict=None):
     ''' Get uncertainties object '''
     if isinstance(hist, str):
       h = self.GetHistogram(hname, self.bkglist)
@@ -871,7 +872,7 @@ class plotter:
     for bkg in self.bkglist:
       hb = h.integrate(self.processLabel, bkg)
       hbnom = hb.integrate(systAxisName, systNomName)
-      self.uncertainties.AddProcess(hbnom, bkg)
+      self.uncertainties.AddProcess(hbnom, bkg, norm = NormUncDict[bkg] if NormUncDict is not None and bkg in NormUncDict else None)
       for s in syst:
         systList = [x.name for x in list(h.identifiers(systAxisName))]
         up = None; do = None
@@ -957,6 +958,8 @@ class plotter:
       dataLabel = 'Data'
     return hData, dataLabel
 
+  def SetNormUncDict(self, NormUncDict=None):
+    self.NormUncDict = NormUncDict
 
 
 
@@ -1126,12 +1129,10 @@ class plotter:
     if ybkg == {}: return #process not found
     ybkg = ybkg[list(ybkg.keys())[0]]
     ybkgmax = max(ybkg)
-    PrintHisto(h)
     hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
-      print('Printing data...')
       hData, dataLabel = self.GetData(hname, h)
       if self.systLabel in [x.name for x in hData.axes()]:
         hData = hData.integrate(self.systLabel, self.systNormLabel)
@@ -1171,7 +1172,7 @@ class plotter:
 
     # Draw uncertainty bands
     if drawSystBand:
-      up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList)
+      up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=self.NormUncDict)
       if self.doData(hname) and self.doRatio:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, ratioax=rax, hatch="\/\/", color="gray")
       else:

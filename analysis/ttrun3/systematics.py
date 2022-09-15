@@ -34,16 +34,15 @@ processDic = {
 bkglist    = ['tt', 'tW','semilep', 'WJets', 'DY', 'Diboson']
 ### Create plotter
 p = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var='counts')
-'''
+
 ### Add hdamp and tune uncertainties
 hdampup,hdampdo = GetModSystHistos(path, 'TTTo2L2Nu_hdamp', 'hdamp', var='counts')
-tuneup , tunedo = GetModSystHistos(path, 'TTTo2L2Nu_UE', 'UE', var='counts')
-p.AddExtraBkgHist([hdampup, hdampdo, tuneup, tunedo], add=True)
-'''
+#tuneup , tunedo = GetModSystHistos(path, 'TTTo2L2Nu_UE', 'UE', var='counts')
+p.AddExtraBkgHist([hdampup, hdampdo], add=True)
 
 ### Create xsec object
 experimental = ['lepSF_muon', 'lepSF_elec']
-modeling = ['ISR', 'FSR'] # ['UE', 'hdamp', 'ISR', 'FSR']
+modeling = ['ISR', 'FSR','hdamp'] # ['UE', 'hdamp', 'ISR', 'FSR']
 x = xsec('tt', 0.06, {'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3}, plotter=p, verbose=1, thxsec=921, experimental=experimental, modeling=modeling, categories=categories)
 x.SetNames(names)
 pdf   = Get1bPDFUnc(  path, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)

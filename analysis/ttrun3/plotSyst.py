@@ -5,7 +5,7 @@
 from config import *
 
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi)
-outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/' + outpatho
+outpath = '/nfs/fanae/user/clara/www/private/ttrun3' + outpatho
 plt.SetOutpath(outpath)
 plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
 plt.SetYRatioTit('Ratio')

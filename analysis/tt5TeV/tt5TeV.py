@@ -435,12 +435,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("m_fake", ( (events.ism_fake)&(trigm)))
         selections.add("metg20", (met.pt>=20))
         selections.add("metl20", (met.pt<20))
-        selections.add("metg15", (met.pt>=20))
-        selections.add("metl15", (met.pt<20))
-        selections.add("metg30", (met.pt>=20))
-        selections.add("metl30", (met.pt<20))
-        selections.add("metg40", (met.pt>=20))
-        selections.add("metl40", (met.pt<20))
+        selections.add("metg15", (met.pt>=15))
+        selections.add("metl15", (met.pt<15))
+        selections.add("metg30", (met.pt>=30))
+        selections.add("metl30", (met.pt<30))
+        selections.add("metg40", (met.pt>=40))
+        selections.add("metl40", (met.pt<40))
         selections.add("incl", ak.ones_like(met.pt, dtype=bool))
  
         # Counts

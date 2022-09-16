@@ -15,8 +15,9 @@ def DrawHistoBtag(path, WP='medium', flav=5, year='2016', outpath=''):
   ratio = ratio[0]
   cx = hu.axis('pt').edges()
   cy = hu.axis('abseta').edges()
-  if year in ['2017', '2018']: ratio = ratio[1:,:-1]
-  else: ratio = ratio[:,:-1]
+  #if year in ['2017', '2018']: ratio = ratio[1:,:-1]
+  #else: ratio = ratio[:,:-1]
+  ratio = ratio[1:,:-1]
   h2d = GetH2DfromXY([cx, cy], ratio, ytit='Y', xtit=['X1', 'X2'], hname=['pt','eta'])
   getnum = lookup_tools.dense_lookup.dense_lookup(hnum.values(overflow='over')[()], [hnum.axis('pt').edges(), hnum.axis('abseta').edges(), hnum.axis('flav').edges()])
   getden = lookup_tools.dense_lookup.dense_lookup(hden.values(overflow='over')[()], [hden.axis('pt').edges(), hnum.axis('abseta').edges(), hden.axis('flav').edges()])
@@ -28,10 +29,11 @@ def DrawHistoBtag(path, WP='medium', flav=5, year='2016', outpath=''):
   DrawEff2D(h2d,'pt', error=None, error2=None, xtit='$p_{T}$ (GeV)', ytit='|$\eta$|', tit='', outname=outpath+'btagSF_%s_%s_%s.pdf'%(year, WP, sflav))
 
 
-path = '/nfs/fanae/user/juanr/coffea/cafea/cafea/data/btagSF/UL/btagMCeff_%s.pkl.gz'
-outpath = '/nfs/fanae/user/juanr/www/public/topEFT/BtaggingSFs/'
+#path = '/nfs/fanae/user/juanr/coffea/cafea/cafea/data/btagSF/UL/btagMCeff_%s.pkl.gz'
+path = '/nfs/fanae/user/juanr/coffea/topcoffea/histos/btagMCeff_%s.pkl.gz'
+outpath = '/nfs/fanae/user/juanr/www/public/topEFT/BtaggingSFs_deepCSV_WZ/'
 
 for wp in ['loose', 'medium', 'tight']:
   for f in [1, 4, 5]:
-    for y in ['2016', '2016APV', '2017', '2018']:
+    for y in ['2018']:#['2016', '2016APV', '2017', '2018']:
       DrawHistoBtag(path, wp, f, y, outpath=outpath)

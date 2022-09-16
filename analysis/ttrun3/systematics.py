@@ -11,10 +11,10 @@ names = {
   #'trigSF' : 'Trigger efficiencies',
   'JES' : 'Jet energy scale',
   #'UE' : 'Underlying event',
-  #'hdamp' : '$h_\mathrm{damp}$',
+  'hdamp' : '$h_\mathrm{damp}$',
   'ISR' : 'Initial-state radiation',
   'FSR' : 'Final-state radiation',
-  #'DY' : 'Drell--Yan',
+  'DY' : 'Drell--Yan',
   'PU' : 'Pileup reweighting',
 }
 

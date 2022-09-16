@@ -27,7 +27,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
-  #plt.SetSystematics(syst=['LepSF_muon', 'LepSF_elec', 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
+  #plt.SetSystematics(syst=['lepSF_muon', 'lepSF_elec'])#, 'FSR', 'ISR'])#, 'PU', 'JES', 'trigSF', 'FSR', 'ISR'])#, 'lepSF']) # FSR, ISR, JES, lepSF, trigSF
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
   #plt.PrintYields('counts')
@@ -36,7 +36,7 @@ def Print2lplots():
   for c in ['ee','em', 'mm']:
     for l in ['dilep', 'g2jets', 'g2jetsg1b']:
       outp = outpath+'/'+l+'/'
-      cat = {'channel':c, 'level':l}#, 'syst':'norm'}
+      cat = {'channel':c, 'level':l,'syst':'norm'}
       for var in ['ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2', 'invmass3']:
         if l=='dilep' and var in ['j0pt', 'j0eta']: continue
         outname = "%s_%s_%s"%(var, c, l)
@@ -45,7 +45,7 @@ def Print2lplots():
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 
-outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU/' + outpatho
+outpath = '/nfs/fanae/user/clara/www/private/ttrun3' + outpatho
 if not var is None:
   ch='em'; level='g2jets'
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
@@ -55,6 +55,6 @@ if not var is None:
 
 
 else:
-  #Draw('invmass', {'channel':['em'], 'level':'g2jets', 'syst':'norm'}, output='invmass_em_g2jets', outpath=outpath)
-  Print2lplots()
+  Draw('njets', {'channel':['em'], 'level':'dilep','syst':'norm'}, output='njetsmalnrm', outpath=outpath)
+  #Print2lplots()
 

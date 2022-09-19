@@ -151,6 +151,8 @@ extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/Muo
 extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
 extLepSF.add_weight_sets(["MuonTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
 extLepSF.add_weight_sets(["ElecTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
 
 extLepSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
@@ -253,20 +255,20 @@ def AttachElecPOGSFs(electrons):
   electrons['sf_hi']  = electrons['sf_nom'] + err
   electrons['sf_lo']  = electrons['sf_nom'] - err
 
-
 def AttachMuonSFsRun3(muons):
   eta = muons.eta
   pt = muons.pt
   muon_sf         = SFevaluator['MuonTightSF_Run3'](np.abs(eta),pt)
   muon_sf_err     = SFevaluator['MuonTightSF_Run3_er'](np.abs(eta),pt)
-  
-  muons['sf_nom_muon'] = muon_sf
-  muons['sf_hi_muon']  = muon_sf + muon_sf_err
-  muons['sf_lo_muon']  = muon_sf - muon_sf_err
+  muon_reco_sf         = SFevaluator['MuonRecoSF_Run3'](np.abs(eta),pt)
+  muon_reco_sf_err     = SFevaluator['MuonRecoSF_Run3_er'](np.abs(eta),pt)  
+  muons['sf_nom_muon'] = muon_sf * muon_reco_sf 
+  muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_reco_sf + muon_reco_sf_err)
+  muons['sf_lo_muon']  = (muon_sf - muon_sf_err) * (muon_reco_sf - muon_reco_sf_err)
   muons['sf_nom_elec'] = ak.ones_like(muon_sf)
   muons['sf_hi_elec']  = ak.ones_like(muon_sf)
   muons['sf_lo_elec']  = ak.ones_like(muon_sf)
-
+  
 def AttachElecSFsRun3(electrons):
   eta = electrons.eta
   pt = electrons.pt

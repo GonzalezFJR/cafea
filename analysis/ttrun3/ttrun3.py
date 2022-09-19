@@ -321,7 +321,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("mm", ( (events.ismm)&(trig)&(METfilters)))
         selections.add("OS", ( (events.isOS)))
         selections.add("SS", ( (events.isSS)))
-        selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(lumi_mask))
+        selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(subleadingpt>35)&(lumi_mask))
         selections.add("g2jets", (njets >= 2))
         selections.add("g2jetsg1b", (njets >= 2)&(nbtagsm>=1))
         selections.add("0jet", (njets == 0))

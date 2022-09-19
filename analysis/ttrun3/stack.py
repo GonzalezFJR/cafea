@@ -29,6 +29,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
   
+
   #PrintHisto(plt.hists[var])
 
   ############## Uncertainties
@@ -61,7 +62,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   # Background uncertainties
   #plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
 
-  plt.SetSystematics(syst=['ISR', 'FSR', 'lepSF_muon', 'lepSF_elec'])
+  plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','norm','stat'])
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
 
@@ -74,14 +75,16 @@ def Print2lplots():
   for c in ['ee','em', 'mm']:
     for l in ['dilep', 'g2jets', 'g2jetsg1b']:
       outp = outpath+'/'+l+'/'
-      cat = {'channel':c, 'level':l}#, 'syst':'norm'}
+      cat = {'channel':c, 'level':l}
       for var in ['ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2', 'invmass3']:
         if l=='dilep' and var in ['j0pt', 'j0eta']: continue
         outname = "%s_%s_%s"%(var, c, l)
-        Draw(var, cat, outname, outpath=outp)
+        Draw(var, cat, output=outname, outpath=outp)
       for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets','nbtagsl','nbtagsm']:
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
+
+
 
 if not var is None:
   ch='em'; level='g2jets'
@@ -92,6 +95,6 @@ if not var is None:
 
 
 else:
-  #Draw('invmass', {'channel':['em'], 'level':'g2jets', 'syst':'norm'}, output='invmass_em_g2jets', outpath=outpath)
-  Print2lplots()
+  Draw('njets', {'channel':['em'], 'level':'dilep','syst':'norm'}, output='njetsmalnrm', outpath=outpath)
+  #Print2lplots()
 

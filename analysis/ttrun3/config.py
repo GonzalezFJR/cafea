@@ -97,9 +97,9 @@ def GetJECSystHistos(path, fname, var, categories): # placeholder : up=down
   #do  = GetModSystHisto(path, fname , systname+'Down', var).values()
   catecopy =  categories.copy()
   catecopy['sign'] = 'OS'
-  nom=GetHisto(path+ 'TTTo2L2Nu.pkl.gz', var, CS)
+  nom=GetHisto(path+ 'TTTo2L2Nu.pkl.gz', var, catecopy)
   nom=nom.integrate('syst','norm')
-  up=GetHisto(path+ fname+'.pkl.gz', var, CS)
+  up=GetHisto(path+ fname+'.pkl.gz', var, catecopy)
   up=up.integrate('syst','norm')
   var=abs(nom.values()[('TTTo2L2Nu',)]-up.values()[('TTTo2L2Nu',)])/nom.values()[('TTTo2L2Nu',)]
   return var

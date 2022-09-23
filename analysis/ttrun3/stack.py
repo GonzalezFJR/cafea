@@ -60,20 +60,20 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   totFlatTTunc = np.sqrt(jecs**2 + hdamp**2 + pdf**2 + scale**2)
 
   # Background uncertainties
-  #plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
+  plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
 
   plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','norm','stat'])
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
 
-  plt.PrintYields('counts')
+  #plt.PrintYields('counts')
 
 outpath = outpatho
-outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF/' 
+outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU/' 
 
 def Print2lplots():
   for c in ['ee','em', 'mm']:
-    for l in ['dilep', 'g2jets', 'g2jetsg1b']:
+    for l in ['dilep', 'g2jets']:#, 'g2jetsg1b']:
       outp = outpath+'/'+l+'/'
       cat = {'channel':c, 'level':l}
       for var in ['ht', 'met', 'j0pt', 'j0eta', 'invmass', 'invmass2', 'invmass3']:
@@ -87,7 +87,7 @@ def Print2lplots():
 
 
 if not var is None:
-  ch='em'; level='g2jets'
+  ch='ee'; level='g2jets'
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
   outp = outpath+'/'+level+'/'
   outname = "%s_%s_%skk"%(var, ch, level)
@@ -95,6 +95,6 @@ if not var is None:
 
 
 else:
-  Draw('njets', {'channel':['em'], 'level':'dilep','syst':'norm'}, output='njetsmalnrm', outpath=outpath)
-  #Print2lplots()
+  #Draw('njets', {'channel':['em'], 'level':'dilep'}, output='njetsmalnrm', outpath=outpath)
+  Print2lplots()
 

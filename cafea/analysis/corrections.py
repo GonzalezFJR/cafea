@@ -255,6 +255,7 @@ def AttachElecPOGSFs(electrons):
   electrons['sf_hi']  = electrons['sf_nom'] + err
   electrons['sf_lo']  = electrons['sf_nom'] - err
 
+sq = lambda x : np.sqrt(sum(a*a for a in x))
 def AttachMuonSFsRun3(muons):
   eta = muons.eta
   pt = muons.pt
@@ -263,8 +264,9 @@ def AttachMuonSFsRun3(muons):
   muon_reco_sf         = SFevaluator['MuonRecoSF_Run3'](np.abs(eta),pt)
   muon_reco_sf_err     = SFevaluator['MuonRecoSF_Run3_er'](np.abs(eta),pt)  
   muons['sf_nom_muon'] = muon_sf * muon_reco_sf 
-  muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_reco_sf + muon_reco_sf_err)
-  muons['sf_lo_muon']  = (muon_sf - muon_sf_err) * (muon_reco_sf - muon_reco_sf_err)
+  #muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_reco_sf + muon_reco_sf_err)
+  muons['sf_hi_muon']  = (muon_sf * muon_reco_sf) + np.sqrt(muon_sf_err*muon_sf_err + muon_reco_sf_err*muon_reco_sf_err + 0.005*muon_sf*muon_reco_sf*0.005*muon_sf*muon_reco_sf)
+  muons['sf_lo_muon']  = (muon_sf * muon_reco_sf) - np.sqrt(muon_sf_err*muon_sf_err + muon_reco_sf_err*muon_reco_sf_err + 0.005*muon_sf*muon_reco_sf*0.005*muon_sf*muon_reco_sf)
   muons['sf_nom_elec'] = ak.ones_like(muon_sf)
   muons['sf_hi_elec']  = ak.ones_like(muon_sf)
   muons['sf_lo_elec']  = ak.ones_like(muon_sf)
@@ -276,8 +278,8 @@ def AttachElecSFsRun3(electrons):
   elec_sf_err     = SFevaluator['ElecTightSF_Run3_er'](np.abs(eta),pt)
 
   electrons['sf_nom_elec'] = elec_sf
-  electrons['sf_hi_elec']  = elec_sf + elec_sf_err
-  electrons['sf_lo_elec']  = elec_sf - elec_sf_err
+  electrons['sf_hi_elec']  = elec_sf + np.sqrt(elec_sf_err*elec_sf_err+(elec_sf*0.01*elec_sf*0.01))
+  electrons['sf_lo_elec']  = elec_sf - np.sqrt(elec_sf_err*elec_sf_err+(elec_sf*0.01*elec_sf*0.01))
   electrons['sf_nom_muon'] = ak.ones_like(elec_sf)
   electrons['sf_hi_muon']  = ak.ones_like(elec_sf)
   electrons['sf_lo_muon']  = ak.ones_like(elec_sf)
@@ -548,6 +550,28 @@ def GetPUSF(nTrueInt, year, var=0):
   nData=PUfunc[year]['DataUp' if var == 1 else ('DataDo' if var == -1 else 'Data')](nTrueInt)
   weights = np.divide(nData,nMC)
   return weights
+  
+  
+########## PU weights Run 3
+
+def GetPUSF_run3(nvtx, calo, charged, process):
+  dic = {'TTToSemiLeptoni': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
+  PUfunc_run3 = {}
+  with uproot.open(cafea_path('data/pileup/weightsRun3_nvtx.root')) as fCentral:
+    hCentral = fCentral['sf_%s;1'%(dic[process])]
+  with uproot.open(cafea_path('data/pileup/weightsRun3_rhoCentralCalo.root')) as fCalo:
+    hCalo = fCalo['sf_%s'%(dic[process])] 
+  with uproot.open(cafea_path('data/pileup/weightsRun3_rhoCentralChargedPileUp.root')) as fCharged:
+    hCharged = fCharged['sf_%s;1'%(dic[process])] 
+  PUfunc_run3['central'] = lookup_tools.dense_lookup.dense_lookup(hCentral.values(), hCentral.axis(0).edges())
+  PUfunc_run3['calo'] = lookup_tools.dense_lookup.dense_lookup(hCalo.values(), hCalo.axis(0).edges())
+  PUfunc_run3['charged'] = lookup_tools.dense_lookup.dense_lookup(hCharged.values(), hCharged.axis(0).edges())
+  pu_sf= (PUfunc_run3['central'](nvtx)+PUfunc_run3['calo'](calo)+PUfunc_run3['charged'](charged))/3.0
+  pu_unc=abs(pu_sf-PUfunc_run3['central'](nvtx))
+  print(pu_sf, PUfunc_run3['central'](nvtx), pu_unc)
+  print('kk')
+  return(pu_sf, pu_sf + pu_unc, pu_sf - pu_unc)
+
 
 ###### JEC corrections 5 TeV
 ##############################################

@@ -17,13 +17,13 @@ from coffea.lumi_tools import LumiMask
 
 from cafea.modules.GetValuesFromJsons import get_param
 from cafea.analysis.objects import *
-from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetPUSF, AttachMuonSFsRun3, AttachElecSFsRun3, GetTriggerSF, GetTrigSFttbar
+from cafea.analysis.corrections import GetPUSF_run3, AttachMuonSFsRun3, AttachElecSFsRun3
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
 doSyst = True
 doJES = False
-
+'''
 def AttachTrigSF(e0, m0, events):
   TrigSFe, TrigSFedo, TrigSFeup = GetTriggerSF5TeV(e0.pt, np.abs(e0.eta), 'e')
   TrigSFm, TrigSFmdo, TrigSFmup = GetTriggerSF5TeV(m0.pt, np.abs(m0.eta), 'm')
@@ -36,7 +36,7 @@ def AttachTrigSF(e0, m0, events):
   events['trigger_sf']    = TrigSFe*TrigSFm
   events['trigger_sfUp'] = TrigSFeup*TrigSFmup
   events['trigger_sfDown'] = TrigSFedo*TrigSFmdo
-
+'''
 class AnalysisProcessor(processor.ProcessorABC):
     def __init__(self, samples):
 
@@ -189,7 +189,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         events['isOS'] = (ak.prod(l_sel.charge, axis=1) == -1) & (ak.num(l_sel_extra) <= 2)
         events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1) & (ak.num(l_sel_extra) <= 2)
         #GetTriggerSF(2018, events, l0, l1) # from top EFT
-
+        '''
         if not isData:
           e_padded = ak.pad_none(e_sel, 1)
           m_padded = ak.pad_none(m_sel, 1)
@@ -199,7 +199,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           events['trigger_sf'    ] = trigSF
           events['trigger_sfUp'  ] = trigUp
           events['trigger_sfDown'] = trigDo
-
+        '''
         # Jet cleaning, before any jet selection
         vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
         tmp = ak.cartesian([ak.local_index(jets.pt), vetos_tocleanjets.jetIdx], nested=True)
@@ -250,7 +250,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           #weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
           #weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
           #weights_dict.add("trigSF", ak.copy(events.trigger_sf), ak.copy(events.trigger_sfUp), ak.copy(events.trigger_sfDown))
-          #weights_dict.add('PU', GetPUSF( (events.Pileup.nTrueInt), '2018'),  GetPUSF( (events.Pileup.nTrueInt), '2018', 1), GetPUSF( (events.Pileup.nTrueInt), '2018', -1) ) 
+          weights_dict.add('PU', GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[0], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[1], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[2]) 
           weights_dict.add("lepSF_muon", events.sf_muon, copy.deepcopy(events.sf_hi_muon), copy.deepcopy(events.sf_lo_muon))
           weights_dict.add("lepSF_elec", events.sf_elec, copy.deepcopy(events.sf_hi_elec), copy.deepcopy(events.sf_lo_elec))
 
@@ -270,7 +270,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
         #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
 
-        if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown"]
+        if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown", "PUUp", "PUDown"]
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
 
         if not doSyst: systList = ["norm"]

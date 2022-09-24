@@ -71,6 +71,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         "nbtagsm"    : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("nbtagsm", "Medium btag multiplicity ", 5, 0, 5)),
         'met'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 10, 0, 200)),
         'ht'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ht",      "H$_{T}$ (GeV)", 10, 0, 400)),
+        'nvtxPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("nvtxPU",      "Number of vertex", 40, 0, 80)),
+        'caloPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("caloPU",      "rhoCentralcaloPU", 40, 0, 80)),
+        'chargedPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("chargedPU",      "rhoCentralchargedPUPileUp", 40, 0, 80)),
         })
 
     @property
@@ -217,7 +220,10 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Jet energy corrections
         met = events.MET
 
-        
+        nvtxPU = events.PV.npvsGood
+        caloPU = events.Rho.fixedGridRhoFastjetCentralCalo
+        chargedPU = events.Rho.fixedGridRhoFastjetCentralChargedPileUp
+
         ################################ Jet selection
         jetptcut = 30
         metcut = 30
@@ -373,6 +379,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             lep0eta = ak.flatten(llpairs.l0.eta[cut])
             jet0pt  = ak.flatten(j0.pt[cut])
             jet0eta = ak.flatten(j0.eta[cut])
+            
             hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut],  syst=syst, sign='OS', weight=weights)
             hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cutSS], syst=syst, sign='SS', weight=weightsSS)
             hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cut], syst=syst, sign='OS', weight=weights)
@@ -395,6 +402,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
             hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
             hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weights)
+            hout['nvtxPU'].fill(sample=histAxisName, channel=ch, level=lev, nvtxPU=nvtxPU[cut], syst=syst, weight=weights)
+            hout['caloPU'].fill(sample=histAxisName, channel=ch, level=lev, caloPU=caloPU[cut], syst=syst, weight=weights)
+            hout['chargedPU'].fill(sample=histAxisName, channel=ch, level=lev, chargedPU=chargedPU[cut], syst=syst, weight=weights)
+
             if lev != 'dilep':
               #jet1pt  = ak.flatten(j1.pt)
               #jet1eta = ak.flatten(j1.eta)

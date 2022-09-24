@@ -62,7 +62,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   # Background uncertainties
   plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
 
-  plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','norm','stat'])
+  plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','PU','norm','stat'])
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
 

@@ -567,9 +567,8 @@ def GetPUSF_run3(nvtx, calo, charged, process):
   PUfunc_run3['calo'] = lookup_tools.dense_lookup.dense_lookup(hCalo.values(), hCalo.axis(0).edges())
   PUfunc_run3['charged'] = lookup_tools.dense_lookup.dense_lookup(hCharged.values(), hCharged.axis(0).edges())
   pu_sf= (PUfunc_run3['central'](nvtx)+PUfunc_run3['calo'](calo)+PUfunc_run3['charged'](charged))/3.0
-  pu_unc=abs(pu_sf-PUfunc_run3['central'](nvtx))
-  print(pu_sf, PUfunc_run3['central'](nvtx), pu_unc)
-  print('kk')
+  pu_unc=pu_sf - PUfunc_run3['central'](nvtx)
+  #return(PUfunc_run3['central'](nvtx), PUfunc_run3['calo'](calo), PUfunc_run3['charged'](charged))
   return(pu_sf, pu_sf + pu_unc, pu_sf - pu_unc)
 
 

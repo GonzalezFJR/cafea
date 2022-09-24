@@ -155,14 +155,14 @@ extLepSF.add_weight_sets(["MuonRecoSF_Run3 EGamma_SF2D %s"%cafea_path('data/Muon
 extLepSF.add_weight_sets(["MuonRecoSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
 
 # tt Run3 - early private trigger SF
-extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3 mu_eff_data %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3 mu_eff_MC %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3_err mu_eff_data_err %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3_err mu_eff_MC_err %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3 e_eff_data %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3 e_eff_MC %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3_err e_eff_data_err %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
-extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3_err e_eff_MC_err %s"%cafea_path('data/triggerSF/ttbarRun3/triggersf_effs.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3 mu_eff_data %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3 mu_eff_mc %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3_err mu_eff_data_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3_err mu_eff_mc_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3 e_eff_data %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3 e_eff_mc %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3_err e_eff_data_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3_err e_eff_mc_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
 
 #extTrigSF.add_weight_sets(["MuonTrigEff_Run3 mu_eff_mc %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
 #extTrigSF.add_weight_sets(["ElecTrigEff_Run3 e_eff_mc %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
@@ -172,7 +172,8 @@ extTrigSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
 TrSFevaulator = extTrigSF.make_evaluator()
 
-def GetTrigSFttbarrun3(elecpt,eleceta, muonpt, muoneta,ch):
+def AttachTrigSFsRun3(events, e, m):
+  muonpt=m.pt; elecpt=e.pt; muoneta=m.eta; eleceta=e.eta
   effm_data = TrSFevaulator["MuonTrigEff_data_Run3"   ](muonpt, abs(muoneta))
   effm_MC = TrSFevaulator["MuonTrigEff_MC_Run3"   ](muonpt, abs(muoneta))
   er_effm_data = TrSFevaulator["MuonTrigEff_data_Run3_err"   ](muonpt, abs(muoneta))
@@ -181,23 +182,19 @@ def GetTrigSFttbarrun3(elecpt,eleceta, muonpt, muoneta,ch):
   effe_MC = TrSFevaulator["ElecTrigEff_MC_Run3"   ](elecpt, abs(eleceta))
   er_effe_data = TrSFevaulator["ElecTrigEff_data_Run3_err"   ](elecpt, abs(eleceta))
   er_effe_MC = TrSFevaulator["ElecTrigEff_MC_Run3_err"   ](elecpt, abs(eleceta))
-  if ch == "em":
-     eff_data = effm_data + effe_data - effm_data*effe_data
-     eff_MC = effm_MC + effe_MC - effm_MC*effe_MC
+  
+  eff_data = effm_data + effe_data - effm_data*effe_data
+  eff_MC = effm_MC + effe_MC - effm_MC*effe_MC
+  er_effdata = er_effm_data + er_effe_data + er_effm_data/effm_data +er_effe_data/effe_data
+  er_effMC = er_effm_MC + er_effe_MC + er_effm_MC/effm_MC +er_effe_MC/effe_MC
 
-     er_effdata = er_effm_data + er_effe_data + er_effm_data/effm_data +er_effe_data/effe_data
-     er_effMC = er_effm_MC + er_effe_MC + er_effm_MC/effm_MC +er_effe_MC/effe_MC
-  
-     SF = eff_data/eff_MC
-  
-     unc = SF*np.sqrt(er_effdata*er_effdata + er_effMC*er_effMC)  
-     up = SF+unc
-     do = SF-unc
-  else: #place holder
-     SF = 1.0
-     up = 0.0
-     do = 0.0
-  return SF, up, do
+  SF = ak.flatten(eff_data/eff_MC)
+  unc = SF*ak.flatten(np.sqrt(er_effdata*er_effdata + er_effMC*er_effMC))  
+  SF_trigger= np.where(events.isem==True, SF,1.0)
+  unc_trigger = np.where(events.isem==True, unc,0)
+  events['SFtrigger']=SF_trigger
+  events['SFtrigger_Up']=SF_trigger+unc_trigger
+  events['SFtrigger_Down']=SF_trigger-unc_trigger
 
 def GetTrigSFttbar(elecpt, muonpt):
   SF = SFevaluator["Trig_2018_em"   ](elecpt, muonpt)
@@ -603,7 +600,6 @@ def GetPUSF_run3(nvtx, calo, charged, process):
   PUfunc_run3['charged'] = lookup_tools.dense_lookup.dense_lookup(hCharged.values(), hCharged.axis(0).edges())
   pu_sf= (PUfunc_run3['central'](nvtx)+PUfunc_run3['calo'](calo)+PUfunc_run3['charged'](charged))/3.0
   pu_unc=pu_sf - PUfunc_run3['central'](nvtx)
-  #return(PUfunc_run3['central'](nvtx), PUfunc_run3['calo'](calo), PUfunc_run3['charged'](charged))
   return(pu_sf, pu_sf + pu_unc, pu_sf - pu_unc)
 
 

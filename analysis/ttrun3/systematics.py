@@ -8,7 +8,7 @@ names = {
   'lepSF_elec' : 'Electron efficiences',
   #'eleceff' : 'Electron efficiences',
   #'muoneff' : 'Muon efficiences',
-  #'trigSF' : 'Trigger efficiencies',
+  'trigSF' : 'Trigger efficiencies',
   'JES' : 'Jet energy scale',
   #'UE' : 'Underlying event',
   'hdamp' : 'ME/PS matching',#$h_\mathrm{damp}$',
@@ -43,7 +43,7 @@ p.AddExtraBkgHist([hdampup, hdampdo], add=True)
 
 
 ### Create xsec object
-experimental = ['lepSF_muon', 'lepSF_elec']
+experimental = ['lepSF_muon', 'lepSF_elec','PU','trigSF']
 modeling = ['ISR', 'FSR','hdamp'] # ['UE', 'hdamp', 'ISR', 'FSR']
 x = xsec('tt', 0.06, {'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3}, plotter=p, verbose=4, thxsec=921, experimental=experimental, modeling=modeling, categories=categories)
 x.SetNames(names)

@@ -62,14 +62,14 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   # Background uncertainties
   plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
 
-  plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','PU','norm','stat'])
+  plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','PU','trigSF','norm','stat'])
   plt.Stack(var, xtit='', ytit='', dosyst=True)
 
 
   #plt.PrintYields('counts')
 
 outpath = outpatho
-outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU/' 
+outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU_triggerSF/' 
 
 def Print2lplots():
   for c in ['ee','em', 'mm']:
@@ -80,7 +80,7 @@ def Print2lplots():
         if l=='dilep' and var in ['j0pt', 'j0eta']: continue
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, output=outname, outpath=outp)
-      for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets','nbtagsl','nbtagsm']:
+      for var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets','nbtagsl','nbtagsm','nvtxPU']:
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 

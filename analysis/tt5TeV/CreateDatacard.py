@@ -18,7 +18,7 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
   bkg =  ['tW', 'WJets', 'QCD', 'DY']
   norm = [0.2, 0.2, 0.2, 0.2]
   signal = 'tt'
-  systList = ['lepSF', 'btagSF', 'FSR', 'ISR', 'hdamp', 'UE', 'JES']#, 'trigSF', 'Scales', 'PDF', 'Prefire']
+  systList = ['lepSF', 'btagSF', 'FSR', 'ISR', 'hdamp', 'UE', 'JES', 'prefire']#, 'trigSF', 'Scales', 'PDF', 'Prefire']
   d = Datacard(fname, signal, bkg, lumiUnc, norm, systList, nSpaces=12)
   #d.AddExtraUnc('prefiring', 0.014, ['tt', 'tW', 'WJets', 'DY'])
   
@@ -28,7 +28,7 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
   d.AddExtraUnc('PDF', 0.007, signal)
   d.AddExtraUnc('Scales', 0.002, signal)
   d.AddExtraUnc('trigSF', 0.01, signal)
-  d.AddExtraUnc('Prefire', 0.01, signal)
+  #d.AddExtraUnc('Prefire', 0.01, signal)
   d.SetOutPath(outpath)
   d.Save(oname)
 

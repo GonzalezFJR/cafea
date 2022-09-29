@@ -13,7 +13,7 @@ class NeuralNet(nn.Module):
 
     self.l1 = nn.Linear(nfeatures, 300)
     self.l2 = nn.Linear(300, 50)
-    self.l3 = nn.Linear(50, 50)
+    #self.l3 = nn.Linear(50, 50)
     #self.l4 = nn.Linear(100, 100)
     self.l5 = nn.Linear(50, 10)
     self.l6 = nn.Linear(10, 2)
@@ -24,7 +24,7 @@ class NeuralNet(nn.Module):
   def forward(self, x):
     x = F.relu(self.l1(x))
     x = F.relu(self.l2(x))
-    x = F.relu(self.l3(x))
+    #x = F.relu(self.l3(x))
     #x = F.relu(self.l4(x))
     x = F.relu(self.l5(x))
     x = self.l6(x)

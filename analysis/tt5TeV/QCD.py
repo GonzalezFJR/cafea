@@ -5,7 +5,7 @@
    hqcd = qcd.GetQCD(var, categories)
 '''
 
-from config import *
+from analysis.tt5TeV.config import *
 
 class QCD:
 
@@ -92,11 +92,14 @@ class QCD:
     countsData = 'counts_metl20'
     if   sys== 1: countsData = 'counts_metl30'
     elif sys==-1: countsData = 'counts_metl15'
-    data_metl20    = self.plt.GetYields(countsData, categories, pr='data')
-    mc_metl20      = self.plt.GetYields(countsData, categories, pr=self.bkglist)
-    data_metl20_fk = self.plt.GetYields(countsData, cat_fake,   pr='data')
-    mc_metl20_fk   = self.plt.GetYields(countsData, cat_fake,   pr=self.bkglist)
+    data_metl20    = self.plt.GetYields(countsData, categories, pr='data', overflow='none')
+    mc_metl20      = self.plt.GetYields(countsData, categories, pr=self.bkglist, overflow='none')
+    data_metl20_fk = self.plt.GetYields(countsData, cat_fake,   pr='data', overflow='none')
+    mc_metl20_fk   = self.plt.GetYields(countsData, cat_fake,   pr=self.bkglist, overflow='none')
+    print('data_metl20 = %f, mc_metl20 = %f, data_metl20_fk = %f, mc_metl20_fk = %f'%(data_metl20, mc_metl20, data_metl20_fk, mc_metl20_fk))
     fact = (data_metl20 - mc_metl20)/(data_metl20_fk - mc_metl20_fk)
+    print('fact = ', fact)
+    #print('data_metl20 = %f, mc_metl20 = %f, data_metl20_fk = %f, mc_metl20_fk = %f, fact = %f'%(data_metl20, mc_metl20, data_metl20_fk, mc_metl20_fk, fact))
     return fact
 
   def GetNorm(self, sys=0):
@@ -104,7 +107,7 @@ class QCD:
 
   def GetQCD(self, var, categories={}, sys=0):
     fact = self.GetNormalization(categories, sys)
-    print('sys = ', sys, 'fact = ', fact)
+    #print('sys = ', sys, 'fact = ', fact)
     h = self.QCDhist[var].copy()
     for cat in categories: 
       h = h.integrate(cat, categories[cat])

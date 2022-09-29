@@ -42,8 +42,8 @@ def GetElecPtSmear(pt, eta, isdata = False):
   return pt*smear
 '''
 
-fillAll = True
-fillDNN = False
+fillAll = False
+fillDNN = True
 doSyst = False
 fillAcc = True
 
@@ -389,6 +389,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             trigm  = events.HLT.HIMu17#HIL3Mu20
 
         # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
+        # prefire
+        if not isData:
+          from cafea.modules.prefire import GetPrefireWeights
+          # Must be done before any selection!
+          prefweight     = GetPrefireWeights(events.Jet, events.Photon, events.Electron, var= 0)
+          prefweightUp   = GetPrefireWeights(events.Jet, events.Photon, events.Electron, var= 1)
+          prefweightDown = GetPrefireWeights(events.Jet, events.Photon, events.Electron, var=-1)
+
         weights_dict = {}
         if (isData): genw = np.ones_like(events["event"])
         else:        genw = events["genWeight"]
@@ -402,6 +410,8 @@ class AnalysisProcessor(processor.ProcessorABC):
               weights_dict[ch_name].add("lepSF", ak.copy(events.sf_1l), ak.copy(events.sf_1l_hi), ak.copy(events.sf_1l_lo))
             weights_dict[ch_name].add("trigSF", ak.copy(events.sf_trig), ak.copy(events.sf_trig_hi), ak.copy(events.sf_trig_lo))
             weights_dict[ch_name].add("btagSF", ak.copy(btagSF), ak.copy(btagSFUp), ak.copy(btagSFDo))
+            weights_dict[ch_name].add("prefire", ak.copy(prefweight), ak.copy(prefweightUp), ak.copy(prefweightDown))
+     
           # PS = ISR, FSR (on ttPS only)
           if doPS: 
             i_ISRdown = 0; i_FSRdown = 1; i_ISRup = 2; i_FSRup = 3
@@ -420,7 +430,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Add systematics
         systList = ["norm"]
         systJets = ['JESUp', 'JESDo']#, 'JERUp', 'JERDown']
-        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown","btagSFUp", "btagSFDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
+        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown","btagSFUp", "btagSFDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst or isData: systList = ["norm"]
 
@@ -518,6 +528,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # ['A_ht', 'A_sumAllPt', 'A_leta', 'A_j0pt', 'A_mjj', 'A_medianDRjj', 'A_drlb']
         mjjpad = ak.pad_none(mjj_nom, 1)
         drjjpad = ak.pad_none(drjjmedian_nom, 1)
+        print('model = ', self.model)
         DNNscore_nom , _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lsel0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_nom)])
         DNNscore_fake, _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lfake0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_fak)])
         #  DNNscore_nom = np.ones_like(events['event'], dtype=float)
@@ -602,13 +613,12 @@ class AnalysisProcessor(processor.ProcessorABC):
               weights_metg40 = weights[cut_metg40]; weights_metl40 = weights[cut_metl40]
               hout['counts_metg20'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg20], syst=syst, weight=weights_metg20)
               hout['counts_metl20'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl20], syst=syst, weight=weights_metl20)
-              if fillAll:
-                hout['counts_metg15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg15], syst=syst, weight=weights_metg15)
-                hout['counts_metl15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl15], syst=syst, weight=weights_metl15)
-                hout['counts_metg30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg30], syst=syst, weight=weights_metg30)
-                hout['counts_metl30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl30], syst=syst, weight=weights_metl30)
-                hout['counts_metg40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg40], syst=syst, weight=weights_metg40)
-                hout['counts_metl40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl40], syst=syst, weight=weights_metl40)
+              hout['counts_metg15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg15], syst=syst, weight=weights_metg15)
+              hout['counts_metl15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl15], syst=syst, weight=weights_metl15)
+              hout['counts_metg30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg30], syst=syst, weight=weights_metg30)
+              hout['counts_metl30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl30], syst=syst, weight=weights_metl30)
+              hout['counts_metg40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg40], syst=syst, weight=weights_metg40)
+              hout['counts_metl40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl40], syst=syst, weight=weights_metl40)
   
               ### We need to have 2 jets in order to calculate dijet observables
               dijet_cuts = cuts + ['g2jets'  + (syst if syst in systJets else '')]
@@ -617,9 +627,9 @@ class AnalysisProcessor(processor.ProcessorABC):
               dijuu_cut = selections.all(*dijuu_cuts)
               weights_dijet = weights[dijet_cut]
               weights_dijuu = weights[dijuu_cut]
+              hout['medianDRjj'].fill(sample=histAxisName, channel=ch, level=lev, medianDRjj=ak.flatten(drjjmedian[dijet_cut]), syst=syst, weight=weights_dijet)
+              hout['minDRjj'].fill(sample=histAxisName, channel=ch, level=lev, minDRjj=ak.flatten(drjj[dijet_cut]), syst=syst, weight=weights_dijet)
               if fillAll:
-                hout['medianDRjj'].fill(sample=histAxisName, channel=ch, level=lev, medianDRjj=ak.flatten(drjjmedian[dijet_cut]), syst=syst, weight=weights_dijet)
-                hout['minDRjj'].fill(sample=histAxisName, channel=ch, level=lev, minDRjj=ak.flatten(drjj[dijet_cut]), syst=syst, weight=weights_dijet)
                 hout['mjj'].fill(sample=histAxisName, channel=ch, level=lev, mjj=ak.flatten(mjj[dijet_cut]), syst=syst, weight=weights_dijet)
                 hout['ptjj'].fill(sample=histAxisName, channel=ch, level=lev, ptjj=ak.flatten(ptjj[dijet_cut]), syst=syst, weight=weights_dijet)
                 #if lev not in ['3j2b', 'incl']:
@@ -636,9 +646,10 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets_var[cut], syst=syst, weight=weights)
               hout['nbtags'].fill(sample=histAxisName, channel=ch, level=lev, nbtags=nbtags_var[cut], syst=syst, weight=weights)
               hout['ht'].fill(sample=histAxisName, channel=ch, level=lev, ht=ht_var[cut], syst=syst, weight=weights)
-              hout['st'].fill(sample=histAxisName, channel=ch, level=lev, st=st[cut], syst=syst, weight=weights)
-              hout['sumallpt'].fill(sample=histAxisName, channel=ch, level=lev, sumallpt=ptSumVecAll[cut], syst=syst, weight=weights)
               hout['met'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cut], syst=syst, weight=weights)
+              if fillAll:
+                hout['st'].fill(sample=histAxisName, channel=ch, level=lev, st=st[cut], syst=syst, weight=weights)
+                hout['sumallpt'].fill(sample=histAxisName, channel=ch, level=lev, sumallpt=ptSumVecAll[cut], syst=syst, weight=weights)
 
               if fillDNN and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
                 if isData: # compute only after applying cuts

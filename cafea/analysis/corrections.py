@@ -52,7 +52,7 @@ def AddSFfromJsonPOG(extLepSF, path):
 
 ###########################################################
 extLepSF = lookup_tools.extractor()
-
+extTrigSF = lookup_tools.extractor()
 
 ## Muon POG
 AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.json'))
@@ -151,9 +151,50 @@ extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/Muo
 extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
 extLepSF.add_weight_sets(["MuonTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
 extLepSF.add_weight_sets(["ElecTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
+
+# tt Run3 - early private trigger SF
+extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3 mu_eff_data %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3 mu_eff_mc %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3_err mu_eff_data_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["MuonTrigEff_MC_Run3_err mu_eff_mc_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3 e_eff_data %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3 e_eff_mc %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_data_Run3_err e_eff_data_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+extTrigSF.add_weight_sets(["ElecTrigEff_MC_Run3_err e_eff_mc_error %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
+
+#extTrigSF.add_weight_sets(["MuonTrigEff_Run3 mu_eff_mc %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
+#extTrigSF.add_weight_sets(["ElecTrigEff_Run3 e_eff_mc %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
 
 extLepSF.finalize()
+extTrigSF.finalize()
 SFevaluator = extLepSF.make_evaluator()
+TrSFevaulator = extTrigSF.make_evaluator()
+
+def AttachTrigSFsRun3(events, e, m):
+  muonpt=m.pt; elecpt=e.pt; muoneta=m.eta; eleceta=e.eta
+  effm_data = TrSFevaulator["MuonTrigEff_data_Run3"   ](muonpt, abs(muoneta))
+  effm_MC = TrSFevaulator["MuonTrigEff_MC_Run3"   ](muonpt, abs(muoneta))
+  er_effm_data = TrSFevaulator["MuonTrigEff_data_Run3_err"   ](muonpt, abs(muoneta))
+  er_effm_MC = TrSFevaulator["MuonTrigEff_MC_Run3_err"   ](muonpt, abs(muoneta))
+  effe_data = TrSFevaulator["ElecTrigEff_data_Run3"   ](elecpt, abs(eleceta))
+  effe_MC = TrSFevaulator["ElecTrigEff_MC_Run3"   ](elecpt, abs(eleceta))
+  er_effe_data = TrSFevaulator["ElecTrigEff_data_Run3_err"   ](elecpt, abs(eleceta))
+  er_effe_MC = TrSFevaulator["ElecTrigEff_MC_Run3_err"   ](elecpt, abs(eleceta))
+  
+  eff_data = effm_data + effe_data - effm_data*effe_data
+  eff_MC = effm_MC + effe_MC - effm_MC*effe_MC
+  er_effdata = er_effm_data + er_effe_data + er_effm_data/effm_data +er_effe_data/effe_data
+  er_effMC = er_effm_MC + er_effe_MC + er_effm_MC/effm_MC +er_effe_MC/effe_MC
+
+  SF = ak.flatten(eff_data/eff_MC)
+  unc = SF*ak.flatten(np.sqrt(er_effdata*er_effdata + er_effMC*er_effMC))  
+  SF_trigger= np.where(events.isem==True, SF,1.0)
+  unc_trigger = np.where(events.isem==True, unc,0)
+  events['SFtrigger']=SF_trigger
+  events['SFtrigger_Up']=SF_trigger+unc_trigger
+  events['SFtrigger_Down']=SF_trigger-unc_trigger
 
 def GetTrigSFttbar(elecpt, muonpt):
   SF = SFevaluator["Trig_2018_em"   ](elecpt, muonpt)
@@ -253,20 +294,22 @@ def AttachElecPOGSFs(electrons):
   electrons['sf_hi']  = electrons['sf_nom'] + err
   electrons['sf_lo']  = electrons['sf_nom'] - err
 
-
+sq = lambda x : np.sqrt(sum(a*a for a in x))
 def AttachMuonSFsRun3(muons):
   eta = muons.eta
   pt = muons.pt
   muon_sf         = SFevaluator['MuonTightSF_Run3'](np.abs(eta),pt)
   muon_sf_err     = SFevaluator['MuonTightSF_Run3_er'](np.abs(eta),pt)
-  
-  muons['sf_nom_muon'] = muon_sf
-  muons['sf_hi_muon']  = muon_sf + muon_sf_err
-  muons['sf_lo_muon']  = muon_sf - muon_sf_err
+  muon_reco_sf         = SFevaluator['MuonRecoSF_Run3'](np.abs(eta),pt)
+  muon_reco_sf_err     = SFevaluator['MuonRecoSF_Run3_er'](np.abs(eta),pt)  
+  muons['sf_nom_muon'] = muon_sf * muon_reco_sf 
+  #muons['sf_hi_muon']  = (muon_sf + muon_sf_err) * (muon_reco_sf + muon_reco_sf_err)
+  muons['sf_hi_muon']  = (muon_sf * muon_reco_sf) + np.sqrt(muon_sf_err*muon_sf_err + muon_reco_sf_err*muon_reco_sf_err + 0.005*muon_sf*muon_reco_sf*0.005*muon_sf*muon_reco_sf)
+  muons['sf_lo_muon']  = (muon_sf * muon_reco_sf) - np.sqrt(muon_sf_err*muon_sf_err + muon_reco_sf_err*muon_reco_sf_err + 0.005*muon_sf*muon_reco_sf*0.005*muon_sf*muon_reco_sf)
   muons['sf_nom_elec'] = ak.ones_like(muon_sf)
   muons['sf_hi_elec']  = ak.ones_like(muon_sf)
   muons['sf_lo_elec']  = ak.ones_like(muon_sf)
-
+  
 def AttachElecSFsRun3(electrons):
   eta = electrons.eta
   pt = electrons.pt
@@ -274,8 +317,8 @@ def AttachElecSFsRun3(electrons):
   elec_sf_err     = SFevaluator['ElecTightSF_Run3_er'](np.abs(eta),pt)
 
   electrons['sf_nom_elec'] = elec_sf
-  electrons['sf_hi_elec']  = elec_sf + elec_sf_err
-  electrons['sf_lo_elec']  = elec_sf - elec_sf_err
+  electrons['sf_hi_elec']  = elec_sf + np.sqrt(elec_sf_err*elec_sf_err+(elec_sf*0.01*elec_sf*0.01))
+  electrons['sf_lo_elec']  = elec_sf - np.sqrt(elec_sf_err*elec_sf_err+(elec_sf*0.01*elec_sf*0.01))
   electrons['sf_nom_muon'] = ak.ones_like(elec_sf)
   electrons['sf_hi_muon']  = ak.ones_like(elec_sf)
   electrons['sf_lo_muon']  = ak.ones_like(elec_sf)
@@ -319,13 +362,6 @@ def GetTriggerSF(year, events, lep0, lep1):
   events['trigger_sf']=ls[0] #nominal
   events['trigger_sfDown']=ls[0]-np.sqrt(ls[1]*ls[1]+0.01*0.01) # place holder: 1% systematic unc.
   events['trigger_sfUp']=ls[0]+np.sqrt(ls[2]*ls[2]+0.01*0.01) # place holder: 1% systematic unc.
-
-
-
-
-
-
-
 
 
 ###### Trigger SFs (for 5.02 TeV, l+jets)
@@ -546,6 +582,26 @@ def GetPUSF(nTrueInt, year, var=0):
   nData=PUfunc[year]['DataUp' if var == 1 else ('DataDo' if var == -1 else 'Data')](nTrueInt)
   weights = np.divide(nData,nMC)
   return weights
+  
+  
+########## PU weights Run 3
+
+def GetPUSF_run3(nvtx, calo, charged, process):
+  dic = {'TTToSemiLeptoni': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
+  PUfunc_run3 = {}
+  with uproot.open(cafea_path('data/pileup/weightsRun3_nvtx.root')) as fCentral:
+    hCentral = fCentral['sf_%s;1'%(dic[process])]
+  with uproot.open(cafea_path('data/pileup/weightsRun3_rhoCentralCalo.root')) as fCalo:
+    hCalo = fCalo['sf_%s'%(dic[process])] 
+  with uproot.open(cafea_path('data/pileup/weightsRun3_rhoCentralChargedPileUp.root')) as fCharged:
+    hCharged = fCharged['sf_%s;1'%(dic[process])] 
+  PUfunc_run3['central'] = lookup_tools.dense_lookup.dense_lookup(hCentral.values(), hCentral.axis(0).edges())
+  PUfunc_run3['calo'] = lookup_tools.dense_lookup.dense_lookup(hCalo.values(), hCalo.axis(0).edges())
+  PUfunc_run3['charged'] = lookup_tools.dense_lookup.dense_lookup(hCharged.values(), hCharged.axis(0).edges())
+  pu_sf= (PUfunc_run3['central'](nvtx)+PUfunc_run3['calo'](calo)+PUfunc_run3['charged'](charged))/3.0
+  pu_unc=pu_sf - PUfunc_run3['central'](nvtx)
+  return(pu_sf, pu_sf + pu_unc, pu_sf - pu_unc)
+
 
 ###### JEC corrections 5 TeV
 ##############################################
@@ -605,12 +661,84 @@ met_factory = CorrectedMETFactory(name_map)
 #print('val = ', val)
 
 
+###### JEC corrections ttbar Run 3
+##############################################
 
+def ApplyJetCorrectionsRun3(isData, corr_type):
 
+	extJEC_data = lookup_tools.extractor()
+	extJEC_data.add_weight_sets([
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs.junc.txt'),
+	  ])
+	extJEC_data.finalize() 
+	JECevaluator_data = extJEC_data.make_evaluator()
+	jec_names_data = ["Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs"]#, "Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs"]
+	jec_inputs_data = {name: JECevaluator_data[name] for name in jec_names_data}
+	jec_stack_data = JECStack(jec_inputs_data)
+	name_map = jec_stack_data.blank_name_map
+	name_map['JetPt'] = 'pt'
+	name_map['JetMass'] = 'mass'
+	name_map['JetEta'] = 'eta'
+	name_map['JetPhi'] = 'phi'
+	name_map['JetA'] = 'area'
+	name_map['ptGenJet'] = 'pt_gen'
+	name_map['ptRaw'] = 'pt_raw'
+	name_map['massRaw'] = 'mass_raw'
+	name_map['Rho'] = 'rho'
+	name_map['METpt'] = 'pt'
+	name_map['METphi'] = 'phi'
+	name_map['UnClusteredEnergyDeltaX'] = 'MetUnclustEnUpDeltaX'
+	name_map['UnClusteredEnergyDeltaY'] = 'MetUnclustEnUpDeltaY'
 
+	if isData: return CorrectedJetsFactory(name_map, jec_stack_data)
+	extJEC = lookup_tools.extractor()
+	#extJEC.add_weight_sets(["* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Relative_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Residual_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1FastJet_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L3Absolute_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1RC_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2L3Residual_AK4PFchs.txt')])
+	extJEC.add_weight_sets([
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L1FastJet_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2L3Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Relative_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L3Absolute_AK4PFchs.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_Uncertainty_AK4PFchs.junc.txt')
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_UncertaintySources_AK4PFchs.junc.txt')
+	  ])
+	extJEC.finalize()
 
+	JECevaluator = extJEC.make_evaluator()
+	jec_types = ['FlavorQCD', 'SubTotalPileUp', 'SubTotalRelative', 'SubTotalAbsolute','TimePtEta']
+	#['FlavorQCD', 'BBEC1', 'AbsoluteStat','AbsoluteScale','AbsoluteSample', 'RelativeBal', 'RelativeSample']
+	jec_regroup = ["Winter22Run3_V1_MC_UncertaintySources_AK4PFchs_%s"%(jec_type) for jec_type in jec_types]
+	jec_names = ["Winter22Run3_V1_MC_L1FastJet_AK4PFchs","Winter22Run3_V1_MC_L2L3Residual_AK4PFchs","Winter22Run3_V1_MC_L2Relative_AK4PFchs","Winter22Run3_V1_MC_L2Residual_AK4PFchs","Winter22Run3_V1_MC_L3Absolute_AK4PFchs"]#,"Winter22Run3_V1_MC_UncertaintySources_AK4PFchs"] 
+	jec_names.extend(jec_regroup)
+	jec_inputs = {name: JECevaluator[name] for name in jec_names}
+	jec_stack = JECStack(jec_inputs)
+	jec_stack_data = JECStack(jec_inputs_data)
+	name_map = jec_stack.blank_name_map
+	name_map['JetPt'] = 'pt'
+	name_map['JetMass'] = 'mass'
+	name_map['JetEta'] = 'eta'
+	name_map['JetPhi'] = 'phi'
+	name_map['JetA'] = 'area'
+	name_map['ptGenJet'] = 'pt_gen'
+	name_map['ptRaw'] = 'pt_raw'
+	name_map['massRaw'] = 'mass_raw'
+	name_map['Rho'] = 'rho'
+	#name_map['METpt'] = 'pt'
+	#name_map['METphi'] = 'phi'
+	#name_map['UnClusteredEnergyDeltaX'] = 'MetUnclustEnUpDeltaX'
+	#name_map['UnClusteredEnergyDeltaY'] = 'MetUnclustEnUpDeltaY'
+	return CorrectedJetsFactory(name_map, jec_stack)
 
-
+def ApplyJetSystematicsRun3(cleanedJets,syst_var='nominal'):
+  if(syst_var in ['nominal']): return cleanedJets
+  elif(syst_var[-2:]=='Up'): return cleanedJets[syst_var[:-2]].up
+  elif('Down' in syst_var): return cleanedJets[syst_var[:-4]].down
+  else: print('fail jec')
 #############################################################################
 # Electron ES
 # 

@@ -4,16 +4,20 @@
 
 from config import *
 
-variation='lepSF_elec'
+variation='PU'
+ch='em';  level='dilep'
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi)
 
 outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU/syst/' 
+outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU/syst/' 
+
 plt.SetOutpath(outpath)
 plt.SetLumi(lumi, "pb$^{-1}$", "13.6 TeV")
 plt.SetYRatioTit('Ratio')
-output = "%s_%s_%s_%s"%(var, ch[0], level,variation)
+output = "%s_%s_%s_%s"%(var, ch, level,variation)
 plt.SetOutput(output)
-plt.SetRatioRange(0.95,1.05)
+plt.SetRatioRange(0.9,1.1)
+#plt.SetRange(yRange=[0,2.5])
 
 #hdampup,hdampdo = GetModSystHistos(path, 'TT_hdamp', 'hdamp', var=var)
 #tuneup , tunedo = GetModSystHistos(path, 'TT_UE', 'UE', var=var)
@@ -33,9 +37,10 @@ def DrawSyst(var, process, syst):
   #dic = [{'channel':ch, 'level':level, 'syst':'norm'}, {'channel':ch, 'level':level, 'syst':syst+'Up'}, {'channel':ch, 'level':level, 'syst':syst'Do} ]
 
 cat = [{'channel':ch, 'level':level, 'sign':'OS','syst':'norm'}, {'channel':ch, 'level':level, 'sign':'OS','syst':variation+'Up'}, {'channel':ch, 'level':level, 'sign':'OS', 'syst':variation+'Down'}]
-if var is None: var = 'l0pt'
+if var is None: var = 'njets'
 pr = 'tt'
 labels = ['Nominal', 'up', 'down']
+#labels = ['nvtx', 'calo', 'chargedPU']
 colors = ['k', 'r', 'b']
 
 DrawComp(var, pr, cat, labels, colors)

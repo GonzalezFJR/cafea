@@ -17,7 +17,7 @@ from coffea.lumi_tools import LumiMask
 
 from cafea.modules.GetValuesFromJsons import get_param
 from cafea.analysis.objects import *
-from cafea.analysis.corrections import GetPUSF_run3, AttachMuonSFsRun3, AttachElecSFsRun3, AttachTrigSFsRun3
+from cafea.analysis.corrections import ApplyJetSystematicsRun3, GetPUSF_run3, AttachMuonSFsRun3, AttachElecSFsRun3, AttachTrigSFsRun3, ApplyJetCorrectionsRun3
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
@@ -49,6 +49,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         'PDF'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("PDF",     "Counts", 103, 0, 103)),
         'Scales'     : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("Scales",  "Counts", 9, 0, 9)),
         'counts'     : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("counts",  "Counts", 1, 0, 10)),
+        'counts_now'     : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("counts_now",  "Counts", 1, 0, 10)),
         'l0pt'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("l0pt",  "Leading lepton $p_{T}$ (GeV)", 10, 20, 120)),
         'l0eta'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("l0eta", "Leading lepton $\eta$ ", 10, -2.5, 2.50)),
         'l1pt'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("l1pt",  "Subleading lepton $p_{T}$ (GeV)", 10, 20, 120)),
@@ -72,8 +73,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         'met'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 10, 0, 200)),
         'ht'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ht",      "H$_{T}$ (GeV)", 10, 0, 400)),
         'nvtxPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("nvtxPU",      "Number of vertex", 40, 0, 80)),
-        'caloPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("caloPU",      "rhoCentralcaloPU", 40, 0, 80)),
-        'chargedPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("chargedPU",      "rhoCentralchargedPUPileUp", 40, 0, 80)),
+        'ptll'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Cat('sign', 'sign'), hist.Bin("ptll",  "$p_{T}^{\ell\ell}$ (GeV)", 26, 40, 300)),
+        #'caloPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("caloPU",      "rhoCentralcaloPU", 40, 0, 80)),
+        #'chargedPU'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("chargedPU",      "rhoCentralchargedPUPileUp", 40, 0, 80)),
         })
 
     @property
@@ -164,6 +166,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         mll = (llpairs.l0+llpairs.l1).mass # Invmass for leading two leps
         deltaphi = (llpairs.l0.delta_phi(llpairs.l1))/np.pi
 
+        
         l_sel_padded = ak.pad_none(l_sel, 2)
         l0 = l_sel_padded[:,0]
         l1 = l_sel_padded[:,1]
@@ -172,6 +175,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         subleadinglep = l_sel[ak.argmin(l_sel.pt, axis=-1, keepdims=True)]
         leadingpt = ak.flatten(leadinglep.pt) #ak.pad_none(l_sel.pt, 1)
         subleadingpt = ak.flatten(subleadinglep.pt) #ak.pad_none(l_sel.pt, 1)
+
         ### Attach scale factors
         if not isData:
           AttachMuonSFsRun3(m_sel)
@@ -188,69 +192,14 @@ class AnalysisProcessor(processor.ProcessorABC):
         events['isSS'] = (ak.prod(l_sel.charge, axis=1) ==  1) & (ak.num(l_sel_extra) <= 2)
         #GetTriggerSF(2018, events, l0, l1) # from top EFT
         if not isData: AttachTrigSFsRun3(events, e0, m0)
-        '''
-        if not isData:
-          e_padded = ak.pad_none(e_sel, 1)
-          m_padded = ak.pad_none(m_sel, 1)
-          ept = e_padded[:,0].pt
-          mpt = m_padded[:,0].pt
-          trigSF, trigUp, trigDo = GetTrigSFttbar(ept, mpt)
-          events['trigger_sf'    ] = trigSF
-          events['trigger_sfUp'  ] = trigUp
-          events['trigger_sfDown'] = trigDo
-        '''
-        # Jet cleaning, before any jet selection
-        vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
-        tmp = ak.cartesian([ak.local_index(jets.pt), vetos_tocleanjets.jetIdx], nested=True)
-        cleanedJets = jets[~ak.any(tmp.slot0 == tmp.slot1, axis=-1)] # this line should go before *any selection*, otherwise lep.jetIdx is not aligned with the jet index
 
-        # Selecting jets and cleaning them
-        jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
-        
-        # Without JEC
-        if doJES == False:
-          cleanedJets["pt"]=(1 - cleanedJets.rawFactor)*cleanedJets.pt
-          cleanedJets["E"]=(1 - cleanedJets.rawFactor)*cleanedJets.E
-          cleanedJets["mass"]=(1 - cleanedJets.rawFactor)*cleanedJets.mass
-       
-        # Jet energy corrections
-        met = events.MET
-
-        nvtxPU = events.PV.npvsGood
-        caloPU = events.Rho.fixedGridRhoFastjetCentralCalo
-        chargedPU = events.Rho.fixedGridRhoFastjetCentralChargedPileUp
-
-        ################################ Jet selection
-        jetptcut = 30
-        metcut = 30
-        cleanedJets["isGood"] = isTightJet(cleanedJets.pt, cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
-        goodJets = cleanedJets[cleanedJets.isGood]
-
-        # Count jets
-        njets = ak.num(goodJets)
-        ht = ak.sum(goodJets.pt,axis=-1)
-        j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
-
-        btagwpl = get_param("btag_wp_loose_UL18")
-        isBtagJetsLoose = (goodJets.btagDeepFlavB > btagwpl)
-        isNotBtagJetsLoose = np.invert(isBtagJetsLoose)
-        nbtagsl = ak.num(goodJets[isBtagJetsLoose])
-        btagwpm = get_param("btag_wp_medium_UL18")
-        isBtagJetsMedium = (goodJets.btagDeepFlavB > btagwpm)
-        isNotBtagJetsMedium = np.invert(isBtagJetsMedium)
-        nbtagsm = ak.num(goodJets[isBtagJetsMedium])       
-        
-        trig = trgPassNoOverlap(events,isData,dataset,year)  
-        METfilters = PassMETfilters(events,isData)
-        # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
+        hout = self.accumulator.identity()
+        ## Add systematics
         if (isData): genw = np.ones_like(events["event"])
-        else:        genw = events["genWeight"]
+        else:          genw = events["genWeight"]
         weights_dict = coffea.analysis_tools.Weights(len(events),storeIndividual=True)
         weights_dict.add("norm",genw if isData else (xsec/sow)*genw)
         if not isData: # Apply SFs
-          #weights_dict.add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
-          #weights_dict.add("eleceff", ak.copy(events.elecsf), ak.copy(events.elecsf_hi), ak.copy(events.elecsf_lo))
-          #weights_dict.add("muoneff", ak.copy(events.muonsf), ak.copy(events.muonsf_hi), ak.copy(events.muonsf_lo))
           weights_dict.add("trigSF", copy.deepcopy(events.SFtrigger), copy.deepcopy(events.SFtrigger_Up), copy.deepcopy(events.SFtrigger_Down))
           weights_dict.add('PU', GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[0], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[1], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[2]) 
           weights_dict.add("lepSF_muon", copy.deepcopy(events.sf_muon), copy.deepcopy(events.sf_hi_muon), copy.deepcopy(events.sf_lo_muon))
@@ -266,187 +215,252 @@ class AnalysisProcessor(processor.ProcessorABC):
           weights_dict.add('ISR', np.ones_like(events["event"]), ISRUp, ISRDo)
           weights_dict.add('FSR', np.ones_like(events["event"]), FSRUp, FSRDo)
 
-        # Add systematics
-        systList = ["norm"]
-        systJets = []#['JESUp', 'JESDo'] if doJES else []
-        #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
-        #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+        if doJES and not isData: systJEC_list = ['nominal']#,'JES_FlavorQCDUp', 'JES_SubTotalPileUpUp', 'JES_SubTotalRelativeUp', 'JES_SubTotalAbsoluteUp','JES_TimePtEtaUp','JES_FlavorQCDDown', 'JES_SubTotalPileUpDown', 'JES_SubTotalRelativeDown', 'JES_SubTotalAbsoluteDown','JES_TimePtEtaDown']
+        else: systJEC_list = ['nominal']
+        if isData: systJEC_list = ['nominal']
+        for syst_var in systJEC_list:
+          # Jet cleaning, before any jet selection
+          vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
+          tmp = ak.cartesian([ak.local_index(jets.pt), vetos_tocleanjets.jetIdx], nested=True)
+          cleanedJets = jets[~ak.any(tmp.slot0 == tmp.slot1, axis=-1)] # this line should go before *any selection*, otherwise lep.jetIdx is not aligned with the jet index
 
-        if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown", "PUUp", "PUDown","trigSFUp", "trigSFDown"]
-        if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
+          # Selecting jets and cleaning them
+          jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
+   
+          # Without JEC
+          if doJES:
+            # Jet energy corrections
+            cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
+            cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
+            if not isData: cleanedJets["pt_gen"] = ak.values_astype(ak.fill_none(cleanedJets.matched_gen.pt, 0), np.float64)
+            cleanedJets["rho"] = ak.broadcast_arrays(events.Rho.fixedGridRhoFastjetAll, cleanedJets.pt)[0]
+            events_cache = events.caches[0]
+            cleanedJets = ApplyJetCorrectionsRun3(isData, corr_type='jets').build(cleanedJets, lazy_cache=events_cache)
+            if not isData: cleanedJets=ApplyJetSystematicsRun3(cleanedJets,syst_var)
+          else: 
+            cleanedJets["pt"]=(1 - cleanedJets.rawFactor)*cleanedJets.pt
+            cleanedJets["E"]=(1 - cleanedJets.rawFactor)*cleanedJets.E
+            cleanedJets["mass"]=(1 - cleanedJets.rawFactor)*cleanedJets.mass
+          
+          met = events.MET
 
-        if not doSyst: systList = ["norm"]
+          nvtxPU = events.PV.npvsGood
+          #caloPU = events.Rho.fixedGridRhoFastjetCentralCalo
+          #chargedPU = events.Rho.fixedGridRhoFastjetCentralChargedPileUp
 
-        # Counts
-        counts = np.ones_like(events['event'], dtype=float)
+          ################################ Jet selection
+          jetptcut = 30
+          metcut = 30
+          cleanedJets["isGood"] = isTightJet(getattr(cleanedJets, jetptname), cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
+          goodJets = cleanedJets[cleanedJets.isGood]
 
-        # Initialize the out object, channels and levels
-        hout = self.accumulator.identity()
-        channels = ['em', 'ee', 'mm'] 
-        levels = ['dilep', 'g2jets', 'offZ', 'metcut','g2jetsg1b']
+          # Count jets
+          njets = ak.num(goodJets)
+          ht = ak.sum(goodJets.pt,axis=-1)
+          j0 = goodJets[ak.argmax(goodJets.pt,axis=-1,keepdims=True)]
 
-        # Add selections...
+          btagwpl = get_param("btag_wp_loose_UL18")
+          isBtagJetsLoose = (goodJets.btagDeepFlavB > btagwpl)
+          isNotBtagJetsLoose = np.invert(isBtagJetsLoose)
+          nbtagsl = ak.num(goodJets[isBtagJetsLoose])
+          btagwpm = get_param("btag_wp_medium_UL18")
+          isBtagJetsMedium = (goodJets.btagDeepFlavB > btagwpm)
+          isNotBtagJetsMedium = np.invert(isBtagJetsMedium)
+          nbtagsm = ak.num(goodJets[isBtagJetsMedium])       
+          
+          trig = trgPassNoOverlap(events,isData,dataset,year)  
+          METfilters = PassMETfilters(events,isData)
+          # We need weights for: normalization, lepSF, triggerSF, pileup, btagSF...
 
-        #Adding secuancial preselection for debugging
-        printevents = False
-        if printevents == True:
-           np.set_printoptions(threshold=sys.maxsize)
-           printarray = np.array([events.event,events.luminosityBlock,events.run,trig,events.isem,events.isee,events.ismm,]) 
-           #print(printarray.transpose())
-           selections = PackedSelection(dtype='uint64')
-           print("counts per selec level")
-           selections.add("lumimask", lumi_mask)
-           selections.add("trigger", trig)
-           selections.add("metfilter", METfilters)
-           cutlum = selections.all(*["lumimask"])
-           print("lumimask",len(counts[cutlum]))
-           cuttrig = selections.all(*["lumimask","trigger"])
-           print("trigger",len(counts[cuttrig]))
-           cutmetfilter = selections.all(*["lumimask","trigger","metfilter"])
-           print("metfilter",len(counts[cutmetfilter]))
-           selections.add("OS", ( (events.isOS)))
-           selections.add("em", ( (events.isem)))
-           cutos = selections.all(*["lumimask","trigger","em","OS"])
-           print("em_os",len(counts[cutos]))
-           mllvalues = np.where(ak.num(mll)==0, [[0]], mll)
-           mllvalues = np.where(ak.num(mllvalues)>1, [[0]], mllvalues)
-           mllvalues = ak.flatten(mllvalues, axis=1)
-           selections.add("mll", ( (mllvalues>20)))
-           selections.add("ptl1l2", ( (leadingpt>35) & (subleadingpt>35)))
-           cutpt = selections.all(*["lumimask","trigger","em","OS","ptl1l2"])
-           cutmll = selections.all(*["lumimask","trigger","em","OS","ptl1l2","mll"])
-           print("pt",len(counts[cutpt]))
-           print("mll",len(counts[cutmll]))
-        selections = PackedSelection(dtype='uint64')
-        selections.add("em", ( (events.isem)&(trig)&(METfilters)))
-        selections.add("ee", ( (events.isee)&(trig)&(METfilters)))
-        selections.add("mm", ( (events.ismm)&(trig)&(METfilters)))
-        selections.add("OS", ( (events.isOS)))
-        selections.add("SS", ( (events.isSS)))
-        selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(subleadingpt>35)&(lumi_mask))
-        selections.add("g2jets", (njets >= 2))
-        selections.add("g2jetsg1b", (njets >= 2)&(nbtagsm>=1))
-        selections.add("0jet", (njets == 0))
-        selections.add("1jet", (njets == 1))
-        selections.add("2jet", (njets == 2))
-        selections.add("3jet", (njets == 3)) 
-        selections.add("g4jet", (njets >= 4))
-        mllvalues = np.where(ak.num(mll)==0, [[0]], mll)
-        mllvalues = np.where(ak.num(mllvalues)>1, [[0]], mllvalues)
-        mllvalues = ak.flatten(mllvalues, axis=1)
-        selections.add("offZ",   ( np.abs(mllvalues-90) > 15)&(njets >= 2))
-        selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
-        selections.add("mll", ( (mllvalues>20)))
-        #printarray = np.array(events.event[cut])
-        #print(printarray)
+          systList = ["norm"]
+          systJets = []#['JESUp', 'JESDo'] if doJES else []
+          #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
+          #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
 
-        ##### Loop over the hists we want to fill
-        #for syst in systList:
-        syst = "norm"
-        for syst in systList:
-         njets_var = njets
-         ht_var = ht
+          if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown", "PUUp", "PUDown","trigSFUp", "trigSFDown"]
+          if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
 
-         for ch in channels:
-          if syst == "norm":
-            for lev in ['0jet', '1jet', '2jet', '3jet', 'g4jet','g2jets','g2jetsg1b']:
-              cuts = [ch] + [lev] + ['mll', 'dilep'] + ['OS']
-              cut   = selections.all(*cuts)
-              weights = weights_dict.weight(None)
-              weights = weights[cut]
+          if not doSyst: systList = ["norm"]
+          if not isData and doSyst and syst_var != 'nominal': systList = [syst_var]
+          # Counts
+          counts = np.ones_like(events['event'], dtype=float)
+          counts_now = np.ones_like(events['event'], dtype=float)
+
+          # Initialize the out object, channels and levels
+
+          channels = ['em', 'ee', 'mm'] 
+          levels = ['dilep', 'g2jets', 'offZ', 'metcut','g2jetsg1b','offZg2jets']
+
+          # Add selections...
+
+          #Adding secuancial preselection for debugging
+          printevents = False
+          if printevents == True:
+             np.set_printoptions(threshold=sys.maxsize)
+             printarray = np.array([events.event,events.luminosityBlock,events.run,trig,events.isem,events.isee,events.ismm,]) 
+             #print(printarray.transpose())
+             selections = PackedSelection(dtype='uint64')
+             print("counts per selec level")
+             selections.add("lumimask", lumi_mask)
+             selections.add("trigger", trig)
+             selections.add("metfilter", METfilters)
+             cutlum = selections.all(*["lumimask"])
+             print("lumimask",len(counts[cutlum]))
+             cuttrig = selections.all(*["lumimask","trigger"])
+             print("trigger",len(counts[cuttrig]))
+             cutmetfilter = selections.all(*["lumimask","trigger","metfilter"])
+             print("metfilter",len(counts[cutmetfilter]))
+             selections.add("OS", ( (events.isOS)))
+             selections.add("em", ( (events.isem)))
+             cutos = selections.all(*["lumimask","trigger","em","OS"])
+             print("em_os",len(counts[cutos]))
+             mllvalues = np.where(ak.num(mll)==0, [[0]], mll)
+             mllvalues = np.where(ak.num(mllvalues)>1, [[0]], mllvalues)
+             mllvalues = ak.flatten(mllvalues, axis=1)
+             selections.add("mll", ( (mllvalues>20)))
+             selections.add("ptl1l2", ( (leadingpt>35) & (subleadingpt>35)))
+             cutpt = selections.all(*["lumimask","trigger","em","OS","ptl1l2"])
+             cutmll = selections.all(*["lumimask","trigger","em","OS","ptl1l2","mll"])
+             print("pt",len(counts[cutpt]))
+             print("mll",len(counts[cutmll]))
+          selections = PackedSelection(dtype='uint64')
+          selections.add("em", ( (events.isem)&(trig)&(METfilters)))
+          selections.add("ee", ( (events.isee)&(trig)&(METfilters)))
+          selections.add("mm", ( (events.ismm)&(trig)&(METfilters)))
+          selections.add("OS", ( (events.isOS)))
+          selections.add("SS", ( (events.isSS)))
+          selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(subleadingpt>35)&(lumi_mask))
+          selections.add("g2jets", (njets >= 2))
+          selections.add("g2jetsg1b", (njets >= 2)&(nbtagsm>=1))
+          selections.add("0jet", (njets == 0))
+          selections.add("1jet", (njets == 1))
+          selections.add("2jet", (njets == 2))
+          selections.add("3jet", (njets == 3)) 
+          selections.add("g4jet", (njets >= 4))
+          mllvalues = np.where(ak.num(mll)==0, [[0]], mll)
+          mllvalues = np.where(ak.num(mllvalues)>1, [[0]], mllvalues)
+          mllvalues = ak.flatten(mllvalues, axis=1)
+          selections.add("offZ",   ( np.abs(mllvalues-90) > 15)&(njets >= 2))
+          selections.add("metcut", (met.pt >= metcut)&( np.abs(mllvalues-90) > 15)&(njets >= 2))
+          selections.add("mll", ( (mllvalues>20)))
+          #printarray = np.array(events.event[cut])
+          #print(printarray)
+          selections.add("offZg2jets", ( np.abs(mllvalues-90) > 15)&(njets >= 2))
+
+          ##### Loop over the hists we want to fill
+          #for syst in systList:
+          syst = "norm"
+          for syst in systList:
+           njets_var = njets
+           ht_var = ht
+
+           for ch in channels:
+            if syst == "norm":
+              for lev in ['0jet', '1jet', '2jet', '3jet', 'g4jet','g2jetsg1b']:
+                cuts = [ch] + [lev] + ['mll', 'dilep'] + ['OS']
+                cut   = selections.all(*cuts)
+                weights = weights_dict.weight(None)
+                weight = weights[cut]
+                mll_flat = mllvalues[cut]
+                hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weight)
+                hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weight)
+                hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weight)
+            for lev in levels:
+              cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']  
+              cutsOS = cuts + ['OS']
+              cutsSS = cuts + ['SS']
+              cut   = selections.all(*cutsOS)
+              cutSS = selections.all(*cutsSS)
+              if (syst in ["norm","nominal"]) or (syst in systJEC_list):
+                weights = weights_dict.weight(None)
+              else:
+                weights = weights_dict.weight(syst)
+
+              # Fill all the variables
+              weightSS = weights[cutSS]
+              weight = weights[cut]
               mll_flat = mllvalues[cut]
-              hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
-              hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
-              hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weights)
-          for lev in levels:
-            cuts = [ch] + [lev + (syst if (syst in systJets and lev == 'g2jets') else '')] + ['mll', 'dilep']  
-            cutsOS = cuts + ['OS']
-            cutsSS = cuts + ['SS']
-            cut   = selections.all(*cutsOS)
-            cutSS = selections.all(*cutsSS)
-            weights = weights_dict.weight(syst if not syst in (['norm']+systJets) else None)
+              ptll = ak.flatten(llpairs.l0.pt[cut]+llpairs.l1.pt[cut])
+              #deltaphi_cut = deltaphi[cut]
+              lep0pt = ak.flatten(llpairs.l0.pt[cut])
+              lep0eta = ak.flatten(llpairs.l0.eta[cut])
+              jet0pt  = ak.flatten(j0.pt[cut])
+              jet0eta = ak.flatten(j0.eta[cut])
+              hout['counts_now'].fill(sample=histAxisName, channel=ch, level=lev, counts_now=counts_now[cut],  syst=syst, sign='OS', weight=np.ones_like(weight))
+              hout['counts_now'].fill(sample=histAxisName, channel=ch, level=lev, counts_now=counts_now[cut],  syst=syst, sign='SS', weight=np.ones_like(weight))
+              hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut],  syst=syst, sign='OS', weight=weight)
+              hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cutSS], syst=syst, sign='SS', weight=weightSS)
+              hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cut], syst=syst, sign='OS', weight=weight)
+              hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cutSS], syst=syst, sign='SS', weight=weightSS)
+              hout['nbtagsl'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsl=nbtagsl[cut], syst=syst, sign='OS', weight=weight)
+              hout['nbtagsl'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsl=nbtagsl[cutSS], syst=syst, sign='SS', weight=weightSS)
+              hout['nbtagsm'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsm=nbtagsm[cut], syst=syst, sign='OS', weight=weight)
+              hout['nbtagsm'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsm=nbtagsm[cutSS], syst=syst, sign='SS', weight=weightSS)
+              hout['ht'].fill(sample=histAxisName, channel=ch, level=lev, ht=ht[cut], syst=syst, weight=weight)
+              hout['deltaphi'].fill(sample=histAxisName, channel=ch, level=lev, deltaphi=ak.flatten(deltaphi[cut]), syst=syst, weight=weight)
+              hout['met'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cut], syst=syst, weight=weight)
+              hout['l0pt'] .fill(sample=histAxisName, channel=ch, level=lev, l0pt=ak.flatten(llpairs.l0.pt[cut]), syst=syst, sign='OS', weight=weight)
+              hout['l0eta'].fill(sample=histAxisName, channel=ch, level=lev, l0eta=ak.flatten(llpairs.l0.eta[cut]), syst=syst, sign='OS', weight=weight)
+              hout['l1pt'] .fill(sample=histAxisName, channel=ch, level=lev, l1pt=ak.flatten(llpairs.l1.pt[cut]), syst=syst, sign='OS', weight=weight)
+              hout['l1eta'].fill(sample=histAxisName, channel=ch, level=lev, l1eta=ak.flatten(llpairs.l1.pt[cut]), syst=syst, sign='OS', weight=weight)
+              hout['ptll'].fill(sample=histAxisName, channel=ch, level=lev, ptll=ak.flatten(llpairs.l0.pt[cut]+llpairs.l1.pt[cut]), syst=syst, sign='OS', weight=weight)
+              hout['l0pt'] .fill(sample=histAxisName, channel=ch, level=lev, l0pt=ak.flatten(llpairs.l0.pt[cutSS]), syst=syst, sign='SS', weight=weightSS)
+              hout['l0eta'].fill(sample=histAxisName, channel=ch, level=lev, l0eta=ak.flatten(llpairs.l0.eta[cutSS]), syst=syst, sign='SS', weight=weightSS)
+              hout['l1pt'].fill(sample=histAxisName, channel=ch, level=lev, l1pt=ak.flatten(llpairs.l1.pt[cutSS]), syst=syst, sign='SS', weight=weightSS)
+              hout['ptll'].fill(sample=histAxisName, channel=ch, level=lev, ptll=ak.flatten(llpairs.l0.pt[cutSS]+llpairs.l1.pt[cutSS]), syst=syst, sign='SS', weight=weightSS)
+              hout['l1eta'].fill(sample=histAxisName, channel=ch, level=lev, l1eta=ak.flatten(llpairs.l1.pt[cutSS]), syst=syst, sign='SS', weight=weightSS)
+              hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weight)
+              hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weight)
+              hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weight)
+              hout['nvtxPU'].fill(sample=histAxisName, channel=ch, level=lev, nvtxPU=nvtxPU[cut], syst=syst, weight=weight)
+              #hout['caloPU'].fill(sample=histAxisName, channel=ch, level=lev, caloPU=caloPU[cut], syst=syst, weight=weight)
+              #hout['chargedPU'].fill(sample=histAxisName, channel=ch, level=lev, chargedPU=chargedPU[cut], syst=syst, weight=weight)
 
-            # Fill all the variables
-            weightsSS = weights[cutSS]
-            weights = weights[cut]
-            mll_flat = mllvalues[cut]
-            #deltaphi_cut = deltaphi[cut]
-            lep0pt = ak.flatten(llpairs.l0.pt[cut])
-            lep0eta = ak.flatten(llpairs.l0.eta[cut])
-            jet0pt  = ak.flatten(j0.pt[cut])
-            jet0eta = ak.flatten(j0.eta[cut])
-            
-            hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut],  syst=syst, sign='OS', weight=weights)
-            hout['counts'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cutSS], syst=syst, sign='SS', weight=weightsSS)
-            hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cut], syst=syst, sign='OS', weight=weights)
-            hout['njets'].fill(sample=histAxisName, channel=ch, level=lev, njets=njets[cutSS], syst=syst, sign='SS', weight=weightsSS)
-            hout['nbtagsl'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsl=nbtagsl[cut], syst=syst, sign='OS', weight=weights)
-            hout['nbtagsl'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsl=nbtagsl[cutSS], syst=syst, sign='SS', weight=weightsSS)
-            hout['nbtagsm'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsm=nbtagsm[cut], syst=syst, sign='OS', weight=weights)
-            hout['nbtagsm'].fill(sample=histAxisName, channel=ch, level=lev, nbtagsm=nbtagsm[cutSS], syst=syst, sign='SS', weight=weightsSS)
-            hout['ht'].fill(sample=histAxisName, channel=ch, level=lev, ht=ht[cut], syst=syst, weight=weights)
-            hout['deltaphi'].fill(sample=histAxisName, channel=ch, level=lev, deltaphi=ak.flatten(deltaphi[cut]), syst=syst, weight=weights)
-            hout['met'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cut], syst=syst, weight=weights)
-            hout['l0pt'] .fill(sample=histAxisName, channel=ch, level=lev, l0pt=ak.flatten(llpairs.l0.pt[cut]), syst=syst, sign='OS', weight=weights)
-            hout['l0eta'].fill(sample=histAxisName, channel=ch, level=lev, l0eta=ak.flatten(llpairs.l0.eta[cut]), syst=syst, sign='OS', weight=weights)
-            hout['l1pt'] .fill(sample=histAxisName, channel=ch, level=lev, l1pt=ak.flatten(llpairs.l1.pt[cut]), syst=syst, sign='OS', weight=weights)
-            hout['l1eta'].fill(sample=histAxisName, channel=ch, level=lev, l1eta=ak.flatten(llpairs.l1.pt[cut]), syst=syst, sign='OS', weight=weights)
-            hout['l0pt'] .fill(sample=histAxisName, channel=ch, level=lev, l0pt=ak.flatten(llpairs.l0.pt[cutSS]), syst=syst, sign='SS', weight=weightsSS)
-            hout['l0eta'].fill(sample=histAxisName, channel=ch, level=lev, l0eta=ak.flatten(llpairs.l0.eta[cutSS]), syst=syst, sign='SS', weight=weightsSS)
-            hout['l1pt'].fill(sample=histAxisName, channel=ch, level=lev, l1pt=ak.flatten(llpairs.l1.pt[cutSS]), syst=syst, sign='SS', weight=weightsSS)
-            hout['l1eta'].fill(sample=histAxisName, channel=ch, level=lev, l1eta=ak.flatten(llpairs.l1.pt[cutSS]), syst=syst, sign='SS', weight=weightsSS)
-            hout['invmass'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_flat, syst=syst, weight=weights)
-            hout['invmass2'].fill(sample=histAxisName, channel=ch, level=lev, invmass2=mll_flat, syst=syst, weight=weights)
-            hout['invmass3'].fill(sample=histAxisName, channel=ch, level=lev, invmass3=mll_flat, syst=syst, weight=weights)
-            hout['nvtxPU'].fill(sample=histAxisName, channel=ch, level=lev, nvtxPU=nvtxPU[cut], syst=syst, weight=weights)
-            hout['caloPU'].fill(sample=histAxisName, channel=ch, level=lev, caloPU=caloPU[cut], syst=syst, weight=weights)
-            hout['chargedPU'].fill(sample=histAxisName, channel=ch, level=lev, chargedPU=chargedPU[cut], syst=syst, weight=weights)
+              if lev != 'dilep':
+                #jet1pt  = ak.flatten(j1.pt)
+                #jet1eta = ak.flatten(j1.eta)
+                hout['j0pt'].fill(sample=histAxisName, channel=ch, level=lev, j0pt=jet0pt, syst=syst, weight=weight)
+                hout['j0eta'].fill(sample=histAxisName, channel=ch, level=lev, j0eta=jet0eta, syst=syst, weight=weight)
+              if ch == 'em':
+                e = e_sel; m = m_sel
+                ept  = ak.flatten(e.pt [cut])
+                eeta = ak.flatten(e.eta[cut])
+                mpt  = ak.flatten(m.pt [cut])
+                meta = ak.flatten(m.eta[cut])
+                hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept =ak.flatten(e.pt [cut  ]), sign='OS', syst=syst, weight=weight)
+                hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=ak.flatten(e.eta[cut  ]), sign='OS', syst=syst, weight=weight)
+                hout['mpt' ].fill(sample=histAxisName, channel=ch, level=lev, mpt =ak.flatten(m.pt [cut  ]), sign='OS', syst=syst, weight=weight)
+                hout['meta'].fill(sample=histAxisName, channel=ch, level=lev, meta=ak.flatten(m.eta[cut  ]), sign='OS', syst=syst, weight=weight)
+                hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept =ak.flatten(e.pt [cutSS]), sign='SS', syst=syst, weight=weightSS)
+                hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=ak.flatten(e.eta[cutSS]), sign='SS', syst=syst, weight=weightSS)
+                hout['mpt' ].fill(sample=histAxisName, channel=ch, level=lev, mpt =ak.flatten(m.pt [cutSS]), sign='SS', syst=syst, weight=weightSS)
+                hout['meta'].fill(sample=histAxisName, channel=ch, level=lev, meta=ak.flatten(m.eta[cutSS]), sign='SS', syst=syst, weight=weightSS)
+              '''
+              elif ch == 'ee':
+                b0 = (abs(llpairs.l0.eta) < 1.479)
+                e0 = (abs(llpairs.l0.eta) > 1.479)
+                b1 = (abs(llpairs.l1.eta) < 1.479)
+                e1 = (abs(llpairs.l1.eta) > 1.479)
+                mll_bb = mll[(b0&b1)]
+                mll_be = mll[(b0&e1)|(e0&b1)]
+                mll_ee = mll[(e0&e1)]
+                mll_bb = ak.flatten(mll_bb)
+                mll_be = ak.flatten(mll_be)
+                mll_ee = ak.flatten(mll_ee)
+                weights_bb = weights[(b0&b1)]
+                weights_be = weights[((b0&e1)|(e0&b1))]
+                weights_ee = weights[(e0&e1)]
+                hout['invmass_bb'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_bb, syst=syst, weight=weights_bb)
+                hout['invmass_be'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_be, syst=syst, weight=weights_be)
+                hout['invmass_ee'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_ee, syst=syst, weight=weights_ee)
+              '''
 
-            if lev != 'dilep':
-              #jet1pt  = ak.flatten(j1.pt)
-              #jet1eta = ak.flatten(j1.eta)
-              hout['j0pt'].fill(sample=histAxisName, channel=ch, level=lev, j0pt=jet0pt, syst=syst, weight=weights)
-              hout['j0eta'].fill(sample=histAxisName, channel=ch, level=lev, j0eta=jet0eta, syst=syst, weight=weights)
-            if ch == 'em':
-              e = e_sel; m = m_sel
-              ept  = ak.flatten(e.pt [cut])
-              eeta = ak.flatten(e.eta[cut])
-              mpt  = ak.flatten(m.pt [cut])
-              meta = ak.flatten(m.eta[cut])
-              hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept =ak.flatten(e.pt [cut  ]), sign='OS', syst=syst, weight=weights)
-              hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=ak.flatten(e.eta[cut  ]), sign='OS', syst=syst, weight=weights)
-              hout['mpt' ].fill(sample=histAxisName, channel=ch, level=lev, mpt =ak.flatten(m.pt [cut  ]), sign='OS', syst=syst, weight=weights)
-              hout['meta'].fill(sample=histAxisName, channel=ch, level=lev, meta=ak.flatten(m.eta[cut  ]), sign='OS', syst=syst, weight=weights)
-              hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept =ak.flatten(e.pt [cutSS]), sign='SS', syst=syst, weight=weightsSS)
-              hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=ak.flatten(e.eta[cutSS]), sign='SS', syst=syst, weight=weightsSS)
-              hout['mpt' ].fill(sample=histAxisName, channel=ch, level=lev, mpt =ak.flatten(m.pt [cutSS]), sign='SS', syst=syst, weight=weightsSS)
-              hout['meta'].fill(sample=histAxisName, channel=ch, level=lev, meta=ak.flatten(m.eta[cutSS]), sign='SS', syst=syst, weight=weightsSS)
-            '''
-            elif ch == 'ee':
-              b0 = (abs(llpairs.l0.eta) < 1.479)
-              e0 = (abs(llpairs.l0.eta) > 1.479)
-              b1 = (abs(llpairs.l1.eta) < 1.479)
-              e1 = (abs(llpairs.l1.eta) > 1.479)
-              mll_bb = mll[(b0&b1)]
-              mll_be = mll[(b0&e1)|(e0&b1)]
-              mll_ee = mll[(e0&e1)]
-              mll_bb = ak.flatten(mll_bb)
-              mll_be = ak.flatten(mll_be)
-              mll_ee = ak.flatten(mll_ee)
-              weights_bb = weights[(b0&b1)]
-              weights_be = weights[((b0&e1)|(e0&b1))]
-              weights_ee = weights[(e0&e1)]
-              hout['invmass_bb'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_bb, syst=syst, weight=weights_bb)
-              hout['invmass_be'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_be, syst=syst, weight=weights_be)
-              hout['invmass_ee'].fill(sample=histAxisName, channel=ch, level=lev, invmass=mll_ee, syst=syst, weight=weights_ee)
-            '''
-
-            # Fill scale and pdf uncertainties
-            if doPDFunc:
-              scale_w = np.transpose(scaleweights[cut])*(weights)
-              pdf_w   = np.transpose(pdfweights  [cut])*(weights)
-              hout['Scales'].fill(sample=histAxisName, channel=ch, level=lev, Scales=ak.flatten(scaleweights_bins[cut]), syst="norm", weight=ak.flatten(scale_w))
-              hout['PDF']   .fill(sample=histAxisName, channel=ch, level=lev, PDF   =ak.flatten(pdfweights_bins[cut]),   syst="norm", weight=ak.flatten(pdf_w))
+              # Fill scale and pdf uncertainties
+              if doPDFunc:
+                scale_w = np.transpose(scaleweights[cut])*(weight)
+                pdf_w   = np.transpose(pdfweights  [cut])*(weight)
+                hout['Scales'].fill(sample=histAxisName, channel=ch, level=lev, Scales=ak.flatten(scaleweights_bins[cut]), syst="norm", weight=ak.flatten(scale_w))
+                hout['PDF']   .fill(sample=histAxisName, channel=ch, level=lev, PDF   =ak.flatten(pdfweights_bins[cut]),   syst="norm", weight=ak.flatten(pdf_w))
         return hout
   
     def postprocess(self, accumulator):

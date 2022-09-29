@@ -587,7 +587,7 @@ def GetPUSF(nTrueInt, year, var=0):
 ########## PU weights Run 3
 
 def GetPUSF_run3(nvtx, calo, charged, process):
-  dic = {'TTToSemiLeptoni': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
+  dic = {'TTToSemiLeptoni': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
   PUfunc_run3 = {}
   with uproot.open(cafea_path('data/pileup/weightsRun3_nvtx.root')) as fCentral:
     hCentral = fCentral['sf_%s;1'%(dic[process])]
@@ -661,12 +661,84 @@ met_factory = CorrectedMETFactory(name_map)
 #print('val = ', val)
 
 
+###### JEC corrections ttbar Run 3
+##############################################
 
+def ApplyJetCorrectionsRun3(isData, corr_type):
 
+	extJEC_data = lookup_tools.extractor()
+	extJEC_data.add_weight_sets([
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs.junc.txt'),
+	  ])
+	extJEC_data.finalize() 
+	JECevaluator_data = extJEC_data.make_evaluator()
+	jec_names_data = ["Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs"]#, "Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs"]
+	jec_inputs_data = {name: JECevaluator_data[name] for name in jec_names_data}
+	jec_stack_data = JECStack(jec_inputs_data)
+	name_map = jec_stack_data.blank_name_map
+	name_map['JetPt'] = 'pt'
+	name_map['JetMass'] = 'mass'
+	name_map['JetEta'] = 'eta'
+	name_map['JetPhi'] = 'phi'
+	name_map['JetA'] = 'area'
+	name_map['ptGenJet'] = 'pt_gen'
+	name_map['ptRaw'] = 'pt_raw'
+	name_map['massRaw'] = 'mass_raw'
+	name_map['Rho'] = 'rho'
+	name_map['METpt'] = 'pt'
+	name_map['METphi'] = 'phi'
+	name_map['UnClusteredEnergyDeltaX'] = 'MetUnclustEnUpDeltaX'
+	name_map['UnClusteredEnergyDeltaY'] = 'MetUnclustEnUpDeltaY'
 
+	if isData: return CorrectedJetsFactory(name_map, jec_stack_data)
+	extJEC = lookup_tools.extractor()
+	#extJEC.add_weight_sets(["* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Relative_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Residual_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1FastJet_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L3Absolute_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1RC_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2L3Residual_AK4PFchs.txt')])
+	extJEC.add_weight_sets([
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L1FastJet_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2L3Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Relative_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Residual_AK4PFchs.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L3Absolute_AK4PFchs.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_Uncertainty_AK4PFchs.junc.txt')
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_UncertaintySources_AK4PFchs.junc.txt')
+	  ])
+	extJEC.finalize()
 
+	JECevaluator = extJEC.make_evaluator()
+	jec_types = ['FlavorQCD', 'SubTotalPileUp', 'SubTotalRelative', 'SubTotalAbsolute','TimePtEta']
+	#['FlavorQCD', 'BBEC1', 'AbsoluteStat','AbsoluteScale','AbsoluteSample', 'RelativeBal', 'RelativeSample']
+	jec_regroup = ["Winter22Run3_V1_MC_UncertaintySources_AK4PFchs_%s"%(jec_type) for jec_type in jec_types]
+	jec_names = ["Winter22Run3_V1_MC_L1FastJet_AK4PFchs","Winter22Run3_V1_MC_L2L3Residual_AK4PFchs","Winter22Run3_V1_MC_L2Relative_AK4PFchs","Winter22Run3_V1_MC_L2Residual_AK4PFchs","Winter22Run3_V1_MC_L3Absolute_AK4PFchs"]#,"Winter22Run3_V1_MC_UncertaintySources_AK4PFchs"] 
+	jec_names.extend(jec_regroup)
+	jec_inputs = {name: JECevaluator[name] for name in jec_names}
+	jec_stack = JECStack(jec_inputs)
+	jec_stack_data = JECStack(jec_inputs_data)
+	name_map = jec_stack.blank_name_map
+	name_map['JetPt'] = 'pt'
+	name_map['JetMass'] = 'mass'
+	name_map['JetEta'] = 'eta'
+	name_map['JetPhi'] = 'phi'
+	name_map['JetA'] = 'area'
+	name_map['ptGenJet'] = 'pt_gen'
+	name_map['ptRaw'] = 'pt_raw'
+	name_map['massRaw'] = 'mass_raw'
+	name_map['Rho'] = 'rho'
+	#name_map['METpt'] = 'pt'
+	#name_map['METphi'] = 'phi'
+	#name_map['UnClusteredEnergyDeltaX'] = 'MetUnclustEnUpDeltaX'
+	#name_map['UnClusteredEnergyDeltaY'] = 'MetUnclustEnUpDeltaY'
+	return CorrectedJetsFactory(name_map, jec_stack)
 
-
+def ApplyJetSystematicsRun3(cleanedJets,syst_var='nominal'):
+  if(syst_var in ['nominal']): return cleanedJets
+  elif(syst_var[-2:]=='Up'): return cleanedJets[syst_var[:-2]].up
+  elif('Down' in syst_var): return cleanedJets[syst_var[:-4]].down
+  else: print('fail jec')
 #############################################################################
 # Electron ES
 # 

@@ -263,12 +263,15 @@ class xsec:
   ##############################################################################################
   def FromPlotter(self, plotter, signalName, lumiunc=0, bkgunc={}, experimental=[], modeling=[], categories={}, hname='counts'):
     bkg = plotter.bkglist
+    print('bkg',bkg)
+
     yields = plotter.GetYields(hname, cat=categories)
     histo = plotter.GetHistogram(hname, categories=categories)
     for p in bkg:
       if p == signalName:
         self.signal = yields[p]
       else:
+        
         self.AddBkg(p, yields[p], normunc=bkgunc[p] if p in bkgunc.keys() else 0)
     self.SetLumi(plotter.lumi, lumiunc)
     self.ComputeTotalBackground()

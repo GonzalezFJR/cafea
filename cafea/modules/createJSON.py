@@ -113,12 +113,15 @@ def main():
     for p in paths:
       filesWithPrefix = GetFiles(prefix+p, sample)
       files += [(f[len(prefix):]) for f in filesWithPrefix]
-
+      
   # 2) Get all rootfiles in a dir and all the sub dirs
     if filesWithPrefix == []:
       if not ',' in path:
         filesWithPrefix = GetFiles(prefix+path, '')
         files = [(f[len(prefix):]) for f in filesWithPrefix]
+        if nFiles is not None: 
+           files = files[:nFiles]
+           filesWithPrefix = filesWithPrefix[:nFiles]
       else:
         paths = path.replace(' ', '').split(',')
         files = []

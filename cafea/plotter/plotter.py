@@ -58,7 +58,7 @@ def GetHisto(path, hname=None, categories={}, group=None, integrate=None, rebin=
       group = [group]
     for g in group:
       cat1, cat2, d = g
-      h = h.group(hist.Cat(cat1, cat), hist.Cat(cat2, cat2), d)
+      h = h.group(hist.Cat(cat1, cat1), hist.Cat(cat2, cat2), d)
   if integrate is not None:
     for i in integrate: h = h.integrate(i)
   if rebin is not None:
@@ -954,7 +954,10 @@ class plotter:
       hData = GetAsimov(h, integrateAxis=integrateAxis)
       dataLabel = 'Asimov'
     else: 
-      hData = self.GetHistogram(hname, self.dataName)
+      if h is None:
+        hData = self.GetHistogram(hname, self.dataName)
+      else: 
+        hData = h.integrate(self.processLabel, self.dataName)
       dataLabel = 'Data'
     return hData, dataLabel
 
@@ -1133,7 +1136,7 @@ class plotter:
 
     ydata = 0; ydatamax = 0
     if self.doData(hname):
-      hData, dataLabel = self.GetData(hname, h)
+      hData, dataLabel = self.GetData(hname)#, h)
       if self.systLabel in [x.name for x in hData.axes()]:
         hData = hData.integrate(self.systLabel, self.systNormLabel)
       hist.plot1d(hData, ax=ax, clear=False, error_opts=data_err_opts, binwnorm=binwnorm)
@@ -1197,7 +1200,7 @@ class plotter:
     plt.close('all')
     #else: fig.savefig(os.path.join(self.outpath, hname+'_'+'_'.join(self.region.split())+'.png'))
 
-  def GetYields(self, var='counts', cat=None, pr=None, doErr=False, syst=None):
+  def GetYields(self, var='counts', cat=None, pr=None, doErr=False, syst=None, overflow='all'):
     sumy = 0; sumerr = 0;
     dicyields = {}
     dicerrors = {}
@@ -1208,7 +1211,7 @@ class plotter:
       else: h = h.integrate(systlabel, syst)
     h.scale(self.lumi)
     for bkg in self.bkglist:
-      y = h[bkg].integrate("process").values(overflow='all', sumw2=True)
+      y = h[bkg].integrate("process").values(overflow=overflow, sumw2=True)
       if y == {}: continue #process not found
       ye = np.sqrt(np.power(y[list(y.keys())[0]][1],2).sum())
       y  = y[list(y.keys())[0]][0].sum()

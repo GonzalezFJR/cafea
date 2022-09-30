@@ -60,6 +60,7 @@ def main():
   parser.add_argument('--treename'        , default='Events'     , help = 'Name of the tree')
   parser.add_argument('--histAxisName'    , default=''           , help = 'Name for the samples axis of the coffea hist')
   parser.add_argument('--update', '-u'    , action='store_true'  , help = 'Name for the samples axis of the coffea hist')
+  parser.add_argument('--split'           , default=0            , help = 'Split a json file into different files')
 
   parser.add_argument('--DAS'             , action='store_true'  , help = 'Search files from DAS dataset')
   parser.add_argument('--nFiles'          , default=None         , help = 'Number of max files (for the moment, only applies for DAS)')
@@ -84,8 +85,13 @@ def main():
   nFiles       = int(args.nFiles) if not args.nFiles is None else None
   verbose      = args.verbose
   update       = args.update
+  split        = int(args.split)
   if update:
     AddSumWeightToJson(path)
+    return
+
+  elif split > 0:
+    SplitJson(path, split)
     return
 
   # Get the xsec for the dataset
@@ -204,6 +210,34 @@ def AddSumWeightToJson(pathJson):
       json.dump(dic, j, indent=2)
     print('>> Updated json: ', pathJson)
 
+import numpy as np
+def SplitJson(pathJson, nfiles):
+  if isinstance(pathJson, str) and os.path.isdir(pathJson):
+    folder = os.listdir(pathJson)
+    jsonfiles = []
+    for j in folder:
+      if j.endswith('.json'): fsonfiles.append(j)
+    return SplitJson(fsonfiles, nfiles)
+  elif isinstance(pathJson, str) and ',' in pathJson:
+    pathJson = pathJson.replace(' ', '').split(',')
+    return SplitJson(pathJson, nfiles)
+  elif isinstance(pathJson, list):
+    for j in pathJson:
+      AddSumWeightToJson(j, nfiles)
+    return
+  else: # Ok, this is a json file
+    files = GetFilesFromJson(pathJson)
+    print('Number of total files: ', len(files))
+    chunks = np.array_split(files, nfiles)
+    newjson = pathJson[:pathJson.find('.json')+1]
+    if newjson.endswith('.'): newjson = newjson[:-1]
+    with open(pathJson) as j: 
+      dic = json.load(j)
+    for i, chunk in enumerate(chunks):
+      with open(newjson + '_part%i.json'%i, 'w') as j:
+        dic['files'] = chunk.tolist()
+        json.dump(dic, j, indent=2)
+        print('Created json: ', (newjson + '_part%i.json'%i), ' with a total of %i files'%(len(chunk.tolist())))
 
 if __name__ == '__main__':
   main()

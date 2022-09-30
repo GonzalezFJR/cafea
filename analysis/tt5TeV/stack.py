@@ -1,12 +1,12 @@
 from config import *
 from QCD import *
 
-qcd = QCD(path, prDic=processDic, bkglist=bkglist, lumi=lumi)
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
 plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
 
 def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, doRatio=True):
   #doQCD = False
+  qcd = QCD(path, prDic=processDic, bkglist=bkglist, lumi=lumi, categories=categories)
   if not CheckHistoCategories(plt.hists[var], categories):
     print(f'Nop... [{var}] cat = ', categories)
     return
@@ -21,9 +21,9 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   #plt.SetLogY()
   rebin = None; xtit = ''; ytit = ''
   if doQCD: 
-    hqcd = qcd.GetQCD(var, categories)
-    hqcdup = qcd.GetQCD(var, categories,  1)
-    hqcddo = qcd.GetQCD(var, categories, -1)
+    hqcd = qcd.GetQCD(var)#, categories)
+    #hqcdup = qcd.GetQCD(var, categories,  1)
+    #hqcddo = qcd.GetQCD(var, categories, -1)
 
   b0 = None; bN = None
   if var in ['minDRjj', 'minDRuu']:
@@ -44,15 +44,15 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
     if doQCD: 
       hqcd   = Rebin(hqcd, var, b0, bN, includeLower=True, includeUpper=True)
-      hqcdup = Rebin(hqcdup, var, b0, bN, includeLower=True, includeUpper=True)
-      hqcddo = Rebin(hqcddo, var, b0, bN, includeLower=True, includeUpper=True)
+      #hqcdup = Rebin(hqcdup, var, b0, bN, includeLower=True, includeUpper=True)
+      #hqcddo = Rebin(hqcddo, var, b0, bN, includeLower=True, includeUpper=True)
     
   if doQCD: 
-    hqcd.add(hqcdup)
-    hqcd.add(hqcddo)
-    print('QCDUp   = ', hqcdup.integrate('process', 'QCD').integrate('syst', 'QCDUp'  ).values(overflow='all'))
-    print('QCDDown = ', hqcddo.integrate('process', 'QCD').integrate('syst', 'QCDDown').values(overflow='all'))
-    print('QCD     = ', hqcd  .integrate('process', 'QCD').integrate('syst', 'norm'   ).values(overflow='all'))
+    #hqcd.add(hqcdup)
+    #hqcd.add(hqcddo)
+    #print('QCDUp   = ', hqcdup.integrate('process', 'QCD').integrate('syst', 'QCDUp'  ).values(overflow='all'))
+    #print('QCDDown = ', hqcddo.integrate('process', 'QCD').integrate('syst', 'QCDDown').values(overflow='all'))
+    #print('QCD     = ', hqcd  .integrate('process', 'QCD').integrate('syst', 'norm'   ).values(overflow='all'))
     plt.AddExtraBkgHist(hqcd)
 
   aname = None
@@ -73,15 +73,15 @@ def Print2lplots():
 
 def Print1lplots():
   outp = outpath+'/1l/'
-  for c in ['m']:#, 'm']:#, ['e','m']]: #, 'e_fake', 'm_fake']:
+  for c in ['e']:#, 'm']:#, ['e','m']]: #, 'e_fake', 'm_fake']:
     doQCD = not 'fake' in c
     doRatio = not 'fake' in c
     #for l in ['incl', 'g2jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
-    for l in ['2j1b', '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
+    for l in ['incl', 'g4jets', '0b']:#, '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
       clab = c if not isinstance(c, list) else 'l'
       outp = outpath+'/1l/'+clab+'/'+l+'/'
-      for var in ['DNNscore']:#['ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
+      for var in ['met']:#['ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
         if l=='incl' and var in ['j0pt', 'j0eta']: continue
         if var == 'DNNscore' and not l in ['2j1b', '3j1b', '3j2b']: continue
         outname = "%s_%s_%s"%(var, clab, l)
@@ -94,7 +94,7 @@ if not var is None:
 
 
 else:
-  outpatho = '5jul/'
+  outpatho = '22sep2022/'
   outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/' + outpatho
   #Print2lplots()
   Print1lplots()

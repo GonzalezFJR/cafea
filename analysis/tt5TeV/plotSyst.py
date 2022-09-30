@@ -44,6 +44,7 @@ def DrawAllForVar(var):
  
 
 def DrawComp(var, process, categories, labels=[], colors=[], lineStyle=[], scale=[]):
+  plt.SetRatioRange(ymin=0.95, ymax=1.05)
   plt.DrawComparison(var, process, categories, labels, colors, lineStyle, scale)
 
 def DrawSyst(var, syst, process='tt', chan='m', level='g4jets'): 

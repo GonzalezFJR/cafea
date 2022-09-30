@@ -34,12 +34,14 @@ class xsec:
     self.lumiunc = lumiunc
     self.xsecnom = 0
     self.xsecunc = {} # Uncertainties on xsec
+    self.fidumodunc = {} # Modeling uncertainties at fidu level
     self.totBkg = 0
     self.totBkgUnc = 0
     self.verbose = verbose
     self.SetThXsec(thxsec)
     self.SetOutPath('.')
     self.SetNames()
+    self.BRsample = 1.
     if plotter is not None:
       self.FromPlotter(plotter, signalName, lumiunc, bkgunc, experimental, modeling, categories)
 
@@ -84,6 +86,10 @@ class xsec:
   def SetBR(self, val):
     ''' Set branching ratio '''
     self.BR = val
+
+  def SetBRsample(self, val):
+    ''' In case it is a dileptonic sample, you need to know the BR of the sample... '''
+    self.BRsample = val
 
   def SetLumi(self, lumi, lumiunc=None):
     ''' Set lumi and uncertainty '''
@@ -240,18 +246,74 @@ class xsec:
     self.xsecnom = self.GetXsec(self.data, self.totBkg, self.signal)
     if self.verbose >= 3: print("     -- Cross section: %1.2f"%self.xsecnom)
 
+  def GetAcceptance(self):
+    ''' Compute the acceptance from gen events '''
+    if self.xsecnom == 0: self.ComputeXsecUncertainties()
+    if not hasattr(self, 'nfidu') or not hasattr(self, 'ngen'):
+      print("The acceptance cannot be computed!! Set gen events, fiducial events and BR with SetGenEvents(), SetFiduEvents()")
+      return
+    # Take into account the BR ***for the sample*** --> not the same if it is TT->incl or TT->2l2nu
+    acc = float(self.nfidu)/(self.ngen * self.BR/self.BRsample)
+    unc = sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in list(self.modunc.keys()) ])) / self.xsecnom
+    accunc = acc*unc
+    return acc, accunc
+
+  def GetEfficiency(self):
+    ''' Compute the efficiency as the xsec part that is not the acceptance '''
+    if self.xsecnom == 0: self.ComputeXsecUncertainties()
+    if not hasattr(self, 'nfidu') or not hasattr(self, 'ngen'):
+      print("The efficiency cannot be computed!! Set gen events, fiducial events with SetGenEvents(), SetFiduEvents()")
+      return
+    tt = self.signal
+    acc,_ = self.GetAcceptance()
+    print('self.BR = ', self.BR)
+    print('self.thxsec = ', self.thxsec)
+    print('acc = ', acc)
+    print('lumi = ', self.lumi)
+    print('tt = ', tt)
+    eff = tt/(acc*self.lumi*self.BR*self.thxsec)
+    print('eff = ', eff)
+
+    #acc = float(self.nfidu)/self.ngen / self.BR
+    #eff = tt / (nfidu * w)
+    unc = sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in list(self.expunc.keys()) ])) / self.xsecnom
+    effunc = eff * unc
+    return eff, effunc
+
   def ComputeFiducial(self):
     ''' Compute fiducial cross section, efficiency and acceptance '''
-    self.acceptance = 0
-    self.efficiency = 0 
-    self.fiducial = 0
-    self.fiducialStat = 0
-    self.fiducialSyst = 0
-    self.fiducialLumi = 0
+    if self.xsecnom == 0: self.ComputeXsecUncertainties()
+    if not hasattr(self, 'nfidu') or not hasattr(self, 'ngen') or not hasattr(self,'BR'):
+      print("The fiducial cross section cannot be computed!! Set gen events, fiducial events and BR with SetGenEvents(), SetFiduEvents(), SetBR()")
+      return
+    acc, uncacc = self.GetAcceptance()
+    self.fiduxsec = self.xsecnom * acc
+    self.fiducialStat = self.fiduxsec * (self.xsecunc['stat'] / self.xsecnom)
+    self.fiducialSyst = self.fiduxsec * (self.GetTotalSystematic() / self.xsecnom)
+    self.fiducialLumi = self.fiduxsec * (self.xsecunc['lumi'] / self.xsecnom)
+    self.fiducialTotal = sqrt(sum([x*x for x in [self.fiducialStat, self.fiducialSyst, self.fiducialLumi]]))
+    print("Fiducial cross section:  %1.3f +/- %1.3f (stat) +/- %1.3f (syst) +/- %1.3f (lumi) = %1.3f +/- %1.3f (total)"%(self.fiduxsec, self.fiducialStat, self.fiducialSyst, self.fiducialLumi, self.fiduxsec, self.fiducialTotal))
+
+  def AddRelativeModUncFiducial(self, key, value):
+    self.fidumodunc[key] = value
+
+  def GetAccUncFiducial(self):
+    unc = 0
+    for k in self.modunc.keys():
+      if k in self.fidumodunc.keys():
+        unc += self.fidumodunc[k]*self.fidumodunc[k]
+      else:
+        unc += self.xsecunc[x]*self.xsecunc[x] / (self.xsecnom * self.xsecnom)
+    return sqrt(unc)
+
+  def GetTotalSystematicFidu(self):
+    unc = sum([self.xsecunc[x] * self.xsecunc[x] / (self.xsecnom * self.xsecnom) for x in (list(self.bkg.keys()) + list(self.expunc.keys())) ])
+    unc += self.GetAccUncFiducial()**2
+    return sqrt(unc)
 
   def GetTotalSystematic(self):
     return sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in (list(self.bkg.keys()) + list(self.modunc.keys()) + list(self.expunc.keys())) ]))
-
+  
   def GetTotalUncertainty(self):
     tots = self.GetTotalSystematic()
     lumi = self.xsecunc['lumi']

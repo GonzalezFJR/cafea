@@ -18,7 +18,7 @@ from cafea.analysis.objects import *
 from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, AttachElectronSF, GetPUSF, GetTriggerSF5TeV, jet_factory, jet_factory_data, met_factory, GetBtagSF5TeV, GetPUSF, AttachMuonPOGSFs, AttachElecPOGSFs, GetTriggerSF, GetTrigSFttbar
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
-nbins = 15000
+nbins = 1500
 lista = list(10 ** np.linspace(np.log10(0.05), np.log10(150), nbins))
 ar = np.array(lista)
 
@@ -33,7 +33,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #'invmass'    : hist.Hist("Events", hist.Bin("invmass", "$m_{\mu\mu}$ (GeV) ", 2400, 0, 120)),
 
         'invmassg'    : hist.Hist("Events", hist.Bin("invmassg", "$m_{\mu\mu}$ (GeV) ", ar)),
-        'invmass'    : hist.Hist("Events", hist.Bin("invmass", "$m_{\mu\mu}$ (GeV) ", 1500, 0.5, 120)),
+        'invmass'    : hist.Hist("Events", hist.Bin("invmass", "$m_{\mu\mu}$ (GeV) ", 500, 0.5, 120)),
         'Z'    : hist.Hist("Events", hist.Bin("Z", "$m_{\mu\mu}$ (GeV) ", 20, 80, 100)),
         })
 

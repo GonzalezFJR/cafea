@@ -46,14 +46,14 @@ year = '2022'
 processDic = {
   'tt': 'TTTo2L2Nu',
   'tW': 'tbarW, tW',
-  'semilep':'TTToSemiLeptoni',
+  'semilep':'TTToSemiLeptonic',
   'WJets':'WJetsToLNu',
   'DY': 'DYJetsToLL_M50, DYJetsToLL_M10to50', 
   'Diboson' : 'WW, WZ, ZZ',#'WWTo2L2Nu, WZTo3LNu',#'WW, WZ, ZZTo2L2Nu',
   'data' : 'MuonEG,EGamma,DoubleMuon,SingleMuon,Muon'
 }
 
-bkglist    = ['tt', 'tW', 'semilep','WJets', 'DY', 'Diboson']
+bkglist    = ['tt', 'tW', 'semilep','WJets','DY', 'Diboson']
 #bkglist = list(processDic.keys())
 bkgnormunc = [0.05, 0.15, 0.2, 0.3, 0.2, 0.3]
 

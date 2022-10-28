@@ -10,7 +10,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   plt.SetOutpath(outpath)
   plt.plotData = doData
   plt.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
-  plt.SetRatioRange(0.5,1.5)
+  plt.SetRatioRange(0.8,1.2)
   if var in ['counts', 'l0pt','ept', 'mpt', 'l0eta', 'eeta', 'meta', 'njets','nbtagsl','nbtagsm','ptll']:
     categories['sign'] = 'OS'
   plt.SetCategories(categories)
@@ -38,7 +38,8 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   # JES -> From JES tt sample without JEC (but, for the moment, flat)
   jecs = 0.0#GetJECSystHistos(path, 'variations/TTTo2L2Nu_withJEC', var='counts', categories=categories)[0]
 
-  # hdamp -> Flat on tt 
+  # hdamp -> Flat on tt
+  ''' 
   hdampup,hdampdo = GetModSystHistos(path, 'TTTo2L2Nu_hdamp', 'hdamp', var='counts')
   for c in categories:
     hdampup = hdampup.integrate(c, categories[c])
@@ -47,7 +48,9 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   hdampdo = hdampdo.integrate('syst', 'hdampDown')
   #print('hdamp', hdampMean)
   # For the moment, hard-coded:
-  hdamp = 0.009859073495631691#0.0082 # 0.82%
+  '''
+  ######## correctedPuppiJets // primera version (sin JECS)
+  hdamp = 0.01335580063899193#0.009859073495631691#0.0082 # 0.82%
   mtop=0.005972
 
   # PDF and scales -> From weights, flat on tt
@@ -58,7 +61,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   totFlatTTunc = np.sqrt(jecs**2 + hdamp**2 + pdf**2 + scale**2)
 
   # Background uncertainties
-  plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2,'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
+  plt.SetNormUncDict({'tt':totFlatTTunc, 'tW':0.15,'semilep':0.2, 'WJets':0.3, 'DY':0.2, 'Diboson':0.3})
 
   plt.SetSystematics(syst=['ISR', 'FSR','lepSF_muon', 'lepSF_elec','PU','trigSF','norm','stat'])
   plt.Stack(var, xtit='', ytit='', dosyst=True)
@@ -67,10 +70,10 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doRatio=True):
   #plt.PrintYields('counts')
 
 outpath = outpatho
-outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU_triggerSF_withMllfixed/' 
+outpath = '/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU_triggerSF_withMllfixed_puppiJetsCorrectedRecommended_newlLepJetCleaning/' 
 
 def Print2lplots():
-  for c in ['em']:#','em', 'mm']:
+  for c in ['em','ee','mm']:#,'ee','mm']:#','em', 'mm']:
     for l in ['dilep', 'g2jets']:#, 'g2jetsg1b']:
       outp = outpath+'/'+l+'/'
       cat = {'channel':c, 'level':l}
@@ -85,10 +88,10 @@ def Print2lplots():
 
 
 if not var is None:
-  ch='em'; level='g2jets'
+  ch='em'; level='dilep'
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
   outp = outpath+'/'+level+'/'
-  outname = "%s_%s_%s"%(var, ch, level)
+  outname = "%s_%s_%skk"%(var, ch, level)
   Draw(var, categories, outname, outpath=outp)
 
 

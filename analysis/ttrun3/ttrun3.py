@@ -17,12 +17,12 @@ from coffea.lumi_tools import LumiMask
 
 from cafea.modules.GetValuesFromJsons import get_param
 from cafea.analysis.objects import *
-from cafea.analysis.corrections import ApplyJetSystematicsRun3, GetPUSF_run3, AttachMuonSFsRun3, AttachElecSFsRun3, AttachTrigSFsRun3, ApplyJetCorrectionsRun3
+from cafea.analysis.corrections import ApplyJetSystematicsRun3, GetPUSF_run3,  AttachMuonSFsRun3, AttachElecSFsRun3, AttachTrigSFsRun3, ApplyJetCorrectionsRun3
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
 doSyst = True
-doJES = False
+doJES = True
 '''
 def AttachTrigSF(e0, m0, events):
   TrigSFe, TrigSFedo, TrigSFeup = GetTriggerSF5TeV(e0.pt, np.abs(e0.eta), 'e')
@@ -204,7 +204,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           weights_dict.add('PU', GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[0], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[1], GetPUSF_run3((events.PV.npvsGood),(events.Rho.fixedGridRhoFastjetCentralCalo),(events.Rho.fixedGridRhoFastjetCentralChargedPileUp), histAxisName)[2]) 
           weights_dict.add("lepSF_muon", copy.deepcopy(events.sf_muon), copy.deepcopy(events.sf_hi_muon), copy.deepcopy(events.sf_lo_muon))
           weights_dict.add("lepSF_elec", copy.deepcopy(events.sf_elec), copy.deepcopy(events.sf_hi_elec), copy.deepcopy(events.sf_lo_elec))
-
+          
         # PS = ISR, FSR (on ttPS only)
         if doPS: 
           i_ISRdown = 0; i_FSRdown = 1; i_ISRup = 2; i_FSRup = 3
@@ -215,34 +215,37 @@ class AnalysisProcessor(processor.ProcessorABC):
           weights_dict.add('ISR', np.ones_like(events["event"]), ISRUp, ISRDo)
           weights_dict.add('FSR', np.ones_like(events["event"]), FSRUp, FSRDo)
 
-        if doJES and not isData: systJEC_list = ['nominal']#,'JES_FlavorQCDUp', 'JES_SubTotalPileUpUp', 'JES_SubTotalRelativeUp', 'JES_SubTotalAbsoluteUp','JES_TimePtEtaUp','JES_FlavorQCDDown', 'JES_SubTotalPileUpDown', 'JES_SubTotalRelativeDown', 'JES_SubTotalAbsoluteDown','JES_TimePtEtaDown']
+        if doJES and not isData: systJEC_list = ['nominal','JERUp','JERDown','JES_FlavorQCDUp', 'JES_SubTotalPileUpUp', 'JES_SubTotalRelativeUp', 'JES_SubTotalAbsoluteUp','JES_TimePtEtaUp','JES_FlavorQCDDown', 'JES_SubTotalPileUpDown', 'JES_SubTotalRelativeDown', 'JES_SubTotalAbsoluteDown','JES_TimePtEtaDown']
         else: systJEC_list = ['nominal']
         if isData: systJEC_list = ['nominal']
         for syst_var in systJEC_list:
           # Jet cleaning, before any jet selection
-          vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
-          tmp = ak.cartesian([ak.local_index(jets.pt), vetos_tocleanjets.jetIdx], nested=True)
-          cleanedJets = jets[~ak.any(tmp.slot0 == tmp.slot1, axis=-1)] # this line should go before *any selection*, otherwise lep.jetIdx is not aligned with the jet index
-
+          #vetos_tocleanjets = ak.with_name( l_sel, "PtEtaPhiMCandidate")
+          #tmp = ak.cartesian([ak.local_index(jets.pt), vetos_tocleanjets.jetIdx], nested=True)
+          #cleanedJets = jets[~ak.any(tmp.slot0 == tmp.slot1, axis=-1)] # this line should go before *any selection*, otherwise lep.jetIdx is not aligned with the jet index
+          j_isclean=ak.all(jets.metric_table(l_sel) > 0.4, axis=2)
+          cleanedJets=jets[j_isclean]
           # Selecting jets and cleaning them
           jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
    
           # Without JEC
           if doJES:
             # Jet energy corrections
+            
             cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
             cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
-            if not isData: cleanedJets["pt_gen"] = ak.values_astype(ak.fill_none(cleanedJets.matched_gen.pt, 0), np.float64)
+            if not isData: cleanedJets["pt_gen"] = ak.values_astype(ak.fill_none(cleanedJets.matched_gen.pt, 0), np.float32)
             cleanedJets["rho"] = ak.broadcast_arrays(events.Rho.fixedGridRhoFastjetAll, cleanedJets.pt)[0]
             events_cache = events.caches[0]
             cleanedJets = ApplyJetCorrectionsRun3(isData, corr_type='jets').build(cleanedJets, lazy_cache=events_cache)
             if not isData: cleanedJets=ApplyJetSystematicsRun3(cleanedJets,syst_var)
+
           else: 
             cleanedJets["pt"]=(1 - cleanedJets.rawFactor)*cleanedJets.pt
             cleanedJets["E"]=(1 - cleanedJets.rawFactor)*cleanedJets.E
             cleanedJets["mass"]=(1 - cleanedJets.rawFactor)*cleanedJets.mass
           
-          met = events.MET
+          met = events.PuppiMET
 
           nvtxPU = events.PV.npvsGood
           #caloPU = events.Rho.fixedGridRhoFastjetCentralCalo
@@ -277,7 +280,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
           #if not isData and not isSystSample: systList = systList + ["eleceffUp","eleceffDown", "muoneffUp", "muoneffDown", "trigSFUp", "trigSFDown", "PUUp", "PUDown"]+systJets
 
-          if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown", "PUUp", "PUDown","trigSFUp", "trigSFDown"]
+          if not isData and not isSystSample: systList = systList + [ "lepSF_elecUp","lepSF_elecDown","lepSF_muonUp","lepSF_muonDown","PUUp", "PUDown","trigSFUp", "trigSFDown"]# 
           if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
 
           if not doSyst: systList = ["norm"]
@@ -289,7 +292,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           # Initialize the out object, channels and levels
 
           channels = ['em', 'ee', 'mm'] 
-          levels = ['dilep', 'g2jets', 'offZ', 'metcut','g2jetsg1b','offZg2jets']
+          levels = ['dilep', 'g1jets','g2jets', 'offZ', 'metcut','g2jetsg1b','offZg2jets']
 
           # Add selections...
 
@@ -330,6 +333,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           selections.add("OS", ( (events.isOS)))
           selections.add("SS", ( (events.isSS)))
           selections.add("dilep",  (njets >= 0)&(leadingpt>35)&(subleadingpt>35)&(lumi_mask))
+          selections.add("g1jets", (njets >= 1))
           selections.add("g2jets", (njets >= 2))
           selections.add("g2jetsg1b", (njets >= 2)&(nbtagsm>=1))
           selections.add("0jet", (njets == 0))

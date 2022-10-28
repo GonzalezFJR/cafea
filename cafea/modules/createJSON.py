@@ -189,8 +189,8 @@ def AddSumWeightToJson(pathJson):
     folder = os.listdir(pathJson)
     jsonfiles = []
     for j in folder:
-      if j.endswith('.json'): fsonfiles.append(j)
-    return AddSumWeightToJson(fsonfiles)
+      if j.endswith('.json'): jsonfiles.append(j)
+    return AddSumWeightToJson(jsonfiles)
   elif isinstance(pathJson, str) and ',' in pathJson:
     pathJson = pathJson.replace(' ', '').split(',')
     return AddSumWeightToJson(pathJson)

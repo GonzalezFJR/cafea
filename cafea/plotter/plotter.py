@@ -154,7 +154,7 @@ def GetXYfromH1D(h, axis=None, mode='edges', errors=False, overflow=False, EFT_W
   #print('y = ', y)
   if overflow:
     ym1 = y[-1]; y = y[:-1]; y[-1] += ym1
-    yem1 = ye[-1]; ye = ye[:-1]; ye[-1] = np.sqrt(ye[-1]*ye[-1] + yem1*yem1)
+    yem1 = ye[-1]; ye = ye[:-1]; ye[-1] = np.sqrt(ye[-1] + yem1)
   if errors: return x, y, ye
   return x,y
 
@@ -1176,6 +1176,7 @@ class plotter:
     # Draw uncertainty bands
     if drawSystBand:
       up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=self.NormUncDict)
+      print('systs', up, do)
       if self.doData(hname) and self.doRatio:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, ratioax=rax, hatch="\/\/", color="gray")
       else:
@@ -1213,7 +1214,7 @@ class plotter:
     for bkg in self.bkglist:
       y = h[bkg].integrate("process").values(overflow=overflow, sumw2=True)
       if y == {}: continue #process not found
-      ye = np.sqrt(np.power(y[list(y.keys())[0]][1],2).sum())
+      ye = np.sqrt(y[list(y.keys())[0]][1].sum())
       y  = y[list(y.keys())[0]][0].sum()
       sumy += y
       sumerr += ye*ye
@@ -1224,7 +1225,7 @@ class plotter:
       if 'syst' in catdata.keys(): catdata['syst'] = 'norm'
       hData = self.GetHistogram(var, self.dataName, catdata)
       ydata = hData.values(overflow='all', sumw2=True)
-      nderr = np.sqrt(np.power(ydata[list(ydata.keys())[0]][1], 2).sum())
+      nderr = np.sqrt(ydata[list(ydata.keys())[0]][1].sum())
       ndata = ydata[list(ydata.keys())[0]][0].sum()
       dicyields[self.dataName] = ndata
       dicerrors[self.dataName] = nderr

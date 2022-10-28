@@ -55,8 +55,8 @@ extLepSF = lookup_tools.extractor()
 extTrigSF = lookup_tools.extractor()
 
 ## Muon POG
-AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.json'))
-AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json'))
+#AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ISO.json'))
+#AddSFfromJsonPOG(extLepSF, cafea_path('data/MuonSF/Efficiencies_muon_generalTracks_Z_Run2018_UL_ID.json'))
 
 
 '''
@@ -587,7 +587,7 @@ def GetPUSF(nTrueInt, year, var=0):
 ########## PU weights Run 3
 
 def GetPUSF_run3(nvtx, calo, charged, process):
-  dic = {'TTToSemiLeptoni': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
+  dic = {'TTToSemiLeptonic': 'TTTo2J1L1Nu_CP5_13p6TeV_powheg-pythia8', 'WJetsToLNu':'WJetsToLNu_TuneCP5_13p6TeV-madgraphMLM-pythia8','DYJetsToLL_M50': 'DYJetsToLL_M-50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'DYJetsToLL_M10to50': 'DYJetsToLL_M-10to50_TuneCP5_13p6TeV-madgraphMLM-pythia8', 'tbarW': 'TbarWplus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'tW': 'TWminus_DR_AtLeastOneLepton_CP5_13p6TeV_powheg-pythia8', 'WW': 'WW_TuneCP5_13p6TeV-pythia8', 'WZ': 'WZ_TuneCP5_13p6TeV-pythia8', 'ZZ': 'ZZ_TuneCP5_13p6TeV-pythia8', 'TTTo2L2Nu': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_hdampDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopUp': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8','TTTo2L2Nu_mtopDown': 'TTTo2L2Nu_CP5_13p6TeV_powheg-pythia8'}
   PUfunc_run3 = {}
   with uproot.open(cafea_path('data/pileup/weightsRun3_nvtx.root')) as fCentral:
     hCentral = fCentral['sf_%s;1'%(dic[process])]
@@ -668,16 +668,16 @@ def ApplyJetCorrectionsRun3(isData, corr_type):
 
 	extJEC_data = lookup_tools.extractor()
 	extJEC_data.add_weight_sets([
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs.junc.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_L1FastJet_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_L2L3Residual_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_L2Relative_AK4PFPuppi.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_L2Residual_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_L3Absolute_AK4PFPuppi.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_RunC_V2_DATA_Uncertainty_AK4PFPuppi.junc.txt'),
 	  ])
 	extJEC_data.finalize() 
 	JECevaluator_data = extJEC_data.make_evaluator()
-	jec_names_data = ["Winter22Run3_RunA_V1_DATA_L1FastJet_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2L3Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Relative_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L2Residual_AK4PFchs", "Winter22Run3_RunA_V1_DATA_L3Absolute_AK4PFchs"]#, "Winter22Run3_RunA_V1_DATA_Uncertainty_AK4PFchs"]
+	jec_names_data = ["Winter22Run3_RunC_V2_DATA_L1FastJet_AK4PFPuppi", "Winter22Run3_RunC_V2_DATA_L2L3Residual_AK4PFPuppi", "Winter22Run3_RunC_V2_DATA_L2Relative_AK4PFPuppi", "Winter22Run3_RunC_V2_DATA_L3Absolute_AK4PFPuppi"]#"Winter22Run3_RunC_V2_DATA_L2Residual_AK4PFPuppi", "Winter22Run3_RunC_V2_DATA_Uncertainty_AK4PFPuppi"]
 	jec_inputs_data = {name: JECevaluator_data[name] for name in jec_names_data}
 	jec_stack_data = JECStack(jec_inputs_data)
 	name_map = jec_stack_data.blank_name_map
@@ -697,23 +697,25 @@ def ApplyJetCorrectionsRun3(isData, corr_type):
 
 	if isData: return CorrectedJetsFactory(name_map, jec_stack_data)
 	extJEC = lookup_tools.extractor()
-	#extJEC.add_weight_sets(["* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Relative_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Residual_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1FastJet_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L3Absolute_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1RC_AK4PFchs.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_Uncertainty_AK4PFchs.junc.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2L3Residual_AK4PFchs.txt')])
+	#extJEC.add_weight_sets(["* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Relative_AK4PFPuppi.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2Residual_AK4PFPuppi.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1FastJet_AK4PFPuppi.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L3Absolute_AK4PFPuppi.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L1RC_AK4PFPuppi.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_Uncertainty_AK4PFPuppi.junc.txt'),"* * "+cafea_path('data/JEC/Summer19UL18_V5_MC_L2L3Residual_AK4PFPuppi.txt')])
 	extJEC.add_weight_sets([
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L1FastJet_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2L3Residual_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Relative_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L2Residual_AK4PFchs.txt'),
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_L3Absolute_AK4PFchs.txt'),
-	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_Uncertainty_AK4PFchs.junc.txt')
-	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_UncertaintySources_AK4PFchs.junc.txt')
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_L1FastJet_AK4PFPuppi.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_L2L3Residual_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_L2Relative_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_L2Residual_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_L3Absolute_AK4PFPuppi.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_SF_AK4PFPuppi.jersf.txt'),
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V1_MC_PtResolution_AK4PFPuppi.jr.txt'),
+	  #"* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_Uncertainty_AK4PFPuppi.junc.txt')
+	  "* * "+cafea_path('data/JEC/run3/Winter22Run3_V2_MC_UncertaintySources_AK4PFPuppi.junc.txt')
 	  ])
 	extJEC.finalize()
 
 	JECevaluator = extJEC.make_evaluator()
 	jec_types = ['FlavorQCD', 'SubTotalPileUp', 'SubTotalRelative', 'SubTotalAbsolute','TimePtEta']
 	#['FlavorQCD', 'BBEC1', 'AbsoluteStat','AbsoluteScale','AbsoluteSample', 'RelativeBal', 'RelativeSample']
-	jec_regroup = ["Winter22Run3_V1_MC_UncertaintySources_AK4PFchs_%s"%(jec_type) for jec_type in jec_types]
-	jec_names = ["Winter22Run3_V1_MC_L1FastJet_AK4PFchs","Winter22Run3_V1_MC_L2L3Residual_AK4PFchs","Winter22Run3_V1_MC_L2Relative_AK4PFchs","Winter22Run3_V1_MC_L2Residual_AK4PFchs","Winter22Run3_V1_MC_L3Absolute_AK4PFchs"]#,"Winter22Run3_V1_MC_UncertaintySources_AK4PFchs"] 
+	jec_regroup = ["Winter22Run3_V2_MC_UncertaintySources_AK4PFPuppi_%s"%(jec_type) for jec_type in jec_types]
+	jec_names = ["Winter22Run3_V1_MC_SF_AK4PFPuppi","Winter22Run3_V1_MC_PtResolution_AK4PFPuppi","Winter22Run3_V2_MC_L1FastJet_AK4PFPuppi","Winter22Run3_V2_MC_L2Relative_AK4PFPuppi","Winter22Run3_V2_MC_L2Residual_AK4PFPuppi","Winter22Run3_V2_MC_L3Absolute_AK4PFPuppi"]#"Winter22Run3_V2_MC_L2L3Residual_AK4PFPuppi",,"Winter22Run3_V2_MC_UncertaintySources_AK4PFPuppi"] 
 	jec_names.extend(jec_regroup)
 	jec_inputs = {name: JECevaluator[name] for name in jec_names}
 	jec_stack = JECStack(jec_inputs)
@@ -736,9 +738,11 @@ def ApplyJetCorrectionsRun3(isData, corr_type):
 
 def ApplyJetSystematicsRun3(cleanedJets,syst_var='nominal'):
   if(syst_var in ['nominal']): return cleanedJets
+  if(syst_var == 'JERUp'): return cleanedJets.JER.up
+  elif(syst_var == 'JERDown'): return cleanedJets.JER.down
   elif(syst_var[-2:]=='Up'): return cleanedJets[syst_var[:-2]].up
   elif('Down' in syst_var): return cleanedJets[syst_var[:-4]].down
-  else: print('fail jec')
+  else: print('fail jec/jer')
 #############################################################################
 # Electron ES
 # 

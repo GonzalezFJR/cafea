@@ -268,16 +268,16 @@ class xsec:
     acc,_ = self.GetAcceptance()
     print('self.BR = ', self.BR)
     print('self.thxsec = ', self.thxsec)
-    print('acc = ', acc)
+    print('acc = ', acc, _)
     print('lumi = ', self.lumi)
     print('tt = ', tt)
     eff = tt/(acc*self.lumi*self.BR*self.thxsec)
-    print('eff = ', eff)
 
     #acc = float(self.nfidu)/self.ngen / self.BR
     #eff = tt / (nfidu * w)
     unc = sqrt(sum([self.xsecunc[x]*self.xsecunc[x] for x in list(self.expunc.keys()) ])) / self.xsecnom
     effunc = eff * unc
+    print('eff = ', eff, effunc)
     return eff, effunc
 
   def ComputeFiducial(self):

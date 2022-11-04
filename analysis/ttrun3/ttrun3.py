@@ -215,7 +215,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           weights_dict.add('ISR', np.ones_like(events["event"]), ISRUp, ISRDo)
           weights_dict.add('FSR', np.ones_like(events["event"]), FSRUp, FSRDo)
 
-        if doJES and not isData: systJEC_list = ['nominal','JERUp','JERDown','JES_FlavorQCDUp', 'JES_SubTotalPileUpUp', 'JES_SubTotalRelativeUp', 'JES_SubTotalAbsoluteUp','JES_TimePtEtaUp','JES_FlavorQCDDown', 'JES_SubTotalPileUpDown', 'JES_SubTotalRelativeDown', 'JES_SubTotalAbsoluteDown','JES_TimePtEtaDown']
+        if doJES and not isData: systJEC_list = ['nominal','JERUp','JERDown',"JES_AbsoluteStatDown", "JES_AbsoluteScaleDown", "JES_AbsoluteSampleDown", "JES_AbsoluteMPFBiasDown", "JES_FragmentationDown", "JES_SinglePionECALDown", "JES_SinglePionHCALDown", "JES_FlavorQCDDown", "JES_TimePtEtaDown", "JES_RelativeJEREC1Down", "JES_RelativePtBBDown", "JES_RelativePtEC1Down", "JES_RelativeBalDown", "JES_RelativeSampleDown", "JES_RelativeFSRDown", "JES_RelativeStatFSRDown", "JES_RelativeStatECDown", "JES_PileUpDataMCDown", "JES_PileUpPtRefDown", "JES_PileUpPtBBDown", "JES_PileUpPtEC1Down", "JES_AbsoluteStatUp", "JES_AbsoluteScaleUp", "JES_AbsoluteSampleUp", "JES_AbsoluteMPFBiasUp", "JES_FragmentationUp", "JES_SinglePionECALUp", "JES_SinglePionHCALUp", "JES_FlavorQCDUp", "JES_TimePtEtaUp", "JES_RelativeJEREC1Up", "JES_RelativePtBBUp", "JES_RelativePtEC1Up", "JES_RelativeBalUp", "JES_RelativeSampleUp", "JES_RelativeFSRUp", "JES_RelativeStatFSRUp", "JES_RelativeStatECUp", "JES_PileUpDataMCUp", "JES_PileUpPtRefUp", "JES_PileUpPtBBUp", "JES_PileUpPtEC1Up"]#'JES_FlavorQCDUp', 'JES_SubTotalPileUpUp', 'JES_SubTotalRelativeUp', 'JES_SubTotalAbsoluteUp','JES_TimePtEtaUp','JES_FlavorQCDDown', 'JES_SubTotalPileUpDown', 'JES_SubTotalRelativeDown', 'JES_SubTotalAbsoluteDown','JES_TimePtEtaDown']
         else: systJEC_list = ['nominal']
         if isData: systJEC_list = ['nominal']
         for syst_var in systJEC_list:
@@ -292,7 +292,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           # Initialize the out object, channels and levels
 
           channels = ['em', 'ee', 'mm'] 
-          levels = ['dilep', 'g1jets','g2jets', 'offZ', 'metcut','g2jetsg1b','offZg2jets']
+          levels = ['dilep', 'g1jets','g2jets']#, 'offZ', 'metcut','g2jetsg1b','offZg2jets']
 
           # Add selections...
 

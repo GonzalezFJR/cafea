@@ -91,7 +91,7 @@ if not var is None:
   ch='em'; level='dilep'
   categories = { 'channel': ch, 'level' : level}#, 'syst':'norm'}
   outp = outpath+'/'+level+'/'
-  outname = "%s_%s_%skk"%(var, ch, level)
+  outname = "%s_%s_%s"%(var, ch, level)
   Draw(var, categories, outname, outpath=outp)
 
 

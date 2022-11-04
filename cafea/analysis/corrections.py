@@ -147,12 +147,12 @@ extLepSF.add_weight_sets(["ElecLooseSF_5TeV EGamma_SF2D %s"%cafea_path(basepathF
 extLepSF.add_weight_sets(["ElecLooseSF_5TeV_er EGamma_SF2D_error %s"%cafea_path(basepathFromTTH+'lepSF/5TeV/final_ele_recotolooseSF.root')])
 
 # tt Run3 - early private SF
-extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
-extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
-extLepSF.add_weight_sets(["MuonTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_run3.root')])
-extLepSF.add_weight_sets(["ElecTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/ElecSF/egammaEffi_run3.root')])
-extLepSF.add_weight_sets(["MuonRecoSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
-extLepSF.add_weight_sets(["MuonRecoSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3.root')])
+extLepSF.add_weight_sets(["MuonTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_run3_v2.root')])
+extLepSF.add_weight_sets(["ElecTightSF_Run3 EGamma_SF2D %s"%cafea_path('data/ElecSF/egammaEffi_run3_v2.root')])
+extLepSF.add_weight_sets(["MuonTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_run3_v2.root')])
+extLepSF.add_weight_sets(["ElecTightSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/ElecSF/egammaEffi_run3_v2.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3 EGamma_SF2D %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3_v2.root')])
+extLepSF.add_weight_sets(["MuonRecoSF_Run3_er EGamma_SF2D_error %s"%cafea_path('data/MuonSF/egammaEffi_reco_run3_v2.root')])
 
 # tt Run3 - early private trigger SF
 extTrigSF.add_weight_sets(["MuonTrigEff_data_Run3 mu_eff_data %s"%cafea_path('data/triggerSF/triggersf_effs_Run3.root')])
@@ -185,8 +185,13 @@ def AttachTrigSFsRun3(events, e, m):
   
   eff_data = effm_data + effe_data - effm_data*effe_data
   eff_MC = effm_MC + effe_MC - effm_MC*effe_MC
+  er_effm_data = np.sqrt(er_effm_data*er_effm_data+0.005*0.005*effm_data*effm_data)
+  er_effe_data = np.sqrt(er_effe_data*er_effe_data+0.01*0.01*effe_data*effe_data)
+  er_effm_MC = np.sqrt(er_effm_MC*er_effm_MC+0.005*0.005*effm_MC*effm_MC)
+  er_effe_MC = np.sqrt(er_effe_MC*er_effe_MC+0.01*0.01*effe_MC*effe_MC)
   er_effdata = er_effm_data + er_effe_data + er_effm_data/effm_data +er_effe_data/effe_data
   er_effMC = er_effm_MC + er_effe_MC + er_effm_MC/effm_MC +er_effe_MC/effe_MC
+
 
   SF = ak.flatten(eff_data/eff_MC)
   unc = SF*ak.flatten(np.sqrt(er_effdata*er_effdata + er_effMC*er_effMC))  
@@ -311,7 +316,7 @@ def AttachMuonSFsRun3(muons):
   muons['sf_lo_elec']  = ak.ones_like(muon_sf)
   
 def AttachElecSFsRun3(electrons):
-  eta = electrons.eta
+  eta = np.abs(electrons.eta + electrons.deltaEtaSC)#electrons.eta
   pt = electrons.pt
   elec_sf         = SFevaluator['ElecTightSF_Run3'](np.abs(eta),pt)
   elec_sf_err     = SFevaluator['ElecTightSF_Run3_er'](np.abs(eta),pt)
@@ -712,7 +717,8 @@ def ApplyJetCorrectionsRun3(isData, corr_type):
 	extJEC.finalize()
 
 	JECevaluator = extJEC.make_evaluator()
-	jec_types = ['FlavorQCD', 'SubTotalPileUp', 'SubTotalRelative', 'SubTotalAbsolute','TimePtEta']
+	jec_types = ["AbsoluteStat","AbsoluteScale","AbsoluteSample","AbsoluteMPFBias","Fragmentation","SinglePionECAL","SinglePionHCAL","FlavorQCD","TimePtEta","RelativeJEREC1","RelativePtBB","RelativePtEC1","RelativeBal","RelativeSample","RelativeFSR","RelativeStatFSR","RelativeStatEC","PileUpDataMC","PileUpPtRef","PileUpPtBB","PileUpPtEC1"]
+	#['FlavorQCD', 'SubTotalPileUp', 'SubTotalRelative', 'SubTotalAbsolute','TimePtEta']
 	#['FlavorQCD', 'BBEC1', 'AbsoluteStat','AbsoluteScale','AbsoluteSample', 'RelativeBal', 'RelativeSample']
 	jec_regroup = ["Winter22Run3_V2_MC_UncertaintySources_AK4PFPuppi_%s"%(jec_type) for jec_type in jec_types]
 	jec_names = ["Winter22Run3_V1_MC_SF_AK4PFPuppi","Winter22Run3_V1_MC_PtResolution_AK4PFPuppi","Winter22Run3_V2_MC_L1FastJet_AK4PFPuppi","Winter22Run3_V2_MC_L2Relative_AK4PFPuppi","Winter22Run3_V2_MC_L2Residual_AK4PFPuppi","Winter22Run3_V2_MC_L3Absolute_AK4PFPuppi"]#"Winter22Run3_V2_MC_L2L3Residual_AK4PFPuppi",,"Winter22Run3_V2_MC_UncertaintySources_AK4PFPuppi"] 

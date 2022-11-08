@@ -119,12 +119,15 @@ def main():
     for p in paths:
       filesWithPrefix = GetFiles(prefix+p, sample)
       files += [(f[len(prefix):]) for f in filesWithPrefix]
-
+      
   # 2) Get all rootfiles in a dir and all the sub dirs
     if filesWithPrefix == []:
       if not ',' in path:
         filesWithPrefix = GetFiles(prefix+path, '')
         files = [(f[len(prefix):]) for f in filesWithPrefix]
+        if nFiles is not None: 
+           files = files[:nFiles]
+           filesWithPrefix = filesWithPrefix[:nFiles]
       else:
         paths = path.replace(' ', '').split(',')
         files = []
@@ -186,8 +189,8 @@ def AddSumWeightToJson(pathJson):
     folder = os.listdir(pathJson)
     jsonfiles = []
     for j in folder:
-      if j.endswith('.json'): fsonfiles.append(j)
-    return AddSumWeightToJson(fsonfiles)
+      if j.endswith('.json'): jsonfiles.append(j)
+    return AddSumWeightToJson(jsonfiles)
   elif isinstance(pathJson, str) and ',' in pathJson:
     pathJson = pathJson.replace(' ', '').split(',')
     return AddSumWeightToJson(pathJson)

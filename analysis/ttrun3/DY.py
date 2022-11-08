@@ -1,14 +1,14 @@
 from config import *
 
-prdic = {'other': 'TTTo2L2Nu, tbarW, tW, WJetsToLNu, TTToSemiLep, WWTo2L2Nu, WZTo3LNu',   'DY': 'DYJetsToLL_M50, DY_M10to50' }
+prdic = {'data':'MuonEG,EGamma,DoubleMuon,SingleMuon,Muon','other': 'TTTo2L2Nu, tbarW, tW, WJetsToLNu, TTToSemiLeptonic, WW, WZ, ZZ',   'DY': 'DYJetsToLL_M50, DYJetsToLL_M10to50'}
 
 cat = {'level':level, 'syst':'norm'}
 mass = 'invmass'
 peak = 'invmass2'
 
 plt = plotter(path, prDic=prdic, colors=colordic, lumi=lumi)
-plt.SetDataName('pseudodata')
-
+plt.SetDataName('data')
+outpath='/nfs/fanae/user/andreatf/www/private/ttrun3/withLepSF_withoutJECPU_metfiltersOverlap_correctLepSF_recoMuonSF_PU_triggerSF_withMllfixed_puppiJetsCorrected/DY/'
 def DrawDY(var='invmass', chan=ch, level=level, doLog=True):
   # Background from em data
   categories = {'channel':chan, 'level':level, 'syst':'norm'}
@@ -16,18 +16,19 @@ def DrawDY(var='invmass', chan=ch, level=level, doLog=True):
   datname = "$0.5\\times k_{\ell\ell}\\times \mathrm{e}\mu$ data"
   
   # Get data estimate in the peak
-  res = DYDD(plt, level=level, save=False)
+  res = DYDD(plt, level=level, save=True)
   hem = GetDYhist(plt, 'em', level, 'data', var, integrateAxis=False)
   kll, kllerr = res['kll'][chan]
   hem.scale(kll*0.5)
-  hem = hem.group("process", hist.Cat("process", "process"), {datname:'Pseudodata'})
+  '''
+  hem = hem.group("process", hist.Cat("process", "process"), {datname:'data'})
 
-  p = plotter(path, {'Drell-Yan': 'DYJetsToLL_M50, DY_M10to50'}, bkgList=['Drell-Yan'], colors={'Drell-Yan':'#3b78cb', datname:'#c6c3b0'}, lumi=lumi, var=var)
-  p.SetDataName('Pseudodata')
+  p = plotter(path, {'Drell-Yan': 'DYJetsToLL_M50, DYJetsToLL_M10to50'}, bkgList=['Drell-Yan'], colors={'Drell-Yan':'#3b78cb', datname:'#c6c3b0'}, lumi=lumi, var=var)
+  p.SetDataName('data')
   if doLog: p.SetLogY()
   p.plotData = True
   p.SetRatio(True)
-  p.SetOutpath(outpatho)
+  p.SetOutpath(outpath)
   p.SetLumi(lumi, "pb$^{-1}$", '13.6 TeV')
   p.SetCategories(categories)
   label = (GetChLab(categories['channel']) if isinstance(categories['channel'], str) else GetChLab(categories['channel'][0]) ) + GetLevLab(categories['level'])
@@ -37,7 +38,7 @@ def DrawDY(var='invmass', chan=ch, level=level, doLog=True):
   p.SetOutput(output)
   p.AddExtraBkgHist(hem)
   p.Stack(var, xtit='', ytit='', dosyst=True)
-
+  '''
 def DrawDYall():
   for v in ['invmass', 'invmass2']:
     for c in ['ee', 'mm']:
@@ -48,9 +49,9 @@ def DrawDYall():
 def GetDYhist(plotter, chan='ee', level='dilep', process='DY', var='invmass', integrateAxis=True):
   categories = {'channel':chan, 'level':level, 'syst':'norm'}
   if process == 'data': 
-    h = plotter.GetHistogram(var, process=None, categories=categories)
-    h.scale(plotter.lumi)
-    h,_ = plt.GetData(var, h, integrateAxis=integrateAxis)
+    h = plotter.GetHistogram(var, process='data', categories=categories)
+    #h.scale(plotter.lumi)
+    #h = h.GetHistogram(h, 'data')
   else:
     h = plotter.GetHistogram(var, process=process, categories=categories)
     h.scale(plotter.lumi)
@@ -58,9 +59,11 @@ def GetDYhist(plotter, chan='ee', level='dilep', process='DY', var='invmass', in
 
 def GetYieldPlt(plotter, chan='ee', level='dilep', process='DY', var='invmass'):
   h = GetDYhist(plotter, chan, level, process, var)
-  y, e = h.values(sumw2=True)[()]
-  y = sum(y); e = sum(e)
-  if process=='data' and plotter.dataName.lower() == 'pseudodata': e = np.sqrt(y)
+  if var == 'invmass': y, e = h.values(overflow='all',sumw2=True)[()]
+  else: y, e = h.values(overflow='none',sumw2=True)[()]
+  y = sum(y); e = np.sqrt(sum(e))
+  print(var, y)
+  if process=='data' and plotter.dataName.lower() == 'data': e = np.sqrt(y)
   return y, e
 
 
@@ -148,7 +151,7 @@ def DYDD(plt, level='dilep', save=False):
   return ret
 
 if __name__ == '__main__':
-  #DYDD(plt, level=level, save=True)
-  DrawDYall()
+  DYDD(plt, level='g2jets', save=True)
+  #DrawDYall()
 
 

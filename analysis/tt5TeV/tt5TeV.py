@@ -20,31 +20,9 @@ from cafea.modules.paths import cafea_path
 
 from NN import EvaluateModelForArrays, EvaluateModelForDataset
 
-'''
-def GetElecPt(pt, eta, ecorr = 1, isdata = False):
-  eta_sep = (abs(eta) < 1.479)
-  fact_leta = (1.016-0.0035) if isdata else 1.005
-  fact_heta = (1.052 -0.036) if isdata else 0.992
-  facts_leta = np.ones_like(pt)*fact_leta
-  facts_heta = np.ones_like(pt)*fact_heta
-  facts = np.where(eta_sep, facts_leta, facts_heta)
-  return pt*facts
-
-def GetElecPtSmear(pt, eta, isdata = False):
-  if(isdata): return pt
-  mass = 91.1876
-  sigma_lowEta = 1.786/mass
-  sigma_highEta = 3.451/mass
-  rnd_lowEta = np.random.normal(1, sigma_lowEta, len(pt))
-  rnd_highEta = np.random.normal(1, sigma_lowEta, len(pt))
-  eta_sep = (abs(eta) < 1.479)
-  smear = np.where(eta_sep, rnd_lowEta, rnd_highEta)
-  return pt*smear
-'''
-
-fillAll = False
+fillAll = True
 fillDNN = True
-doSyst = False
+doSyst = True
 fillAcc = True
 
 def AttachTrigSF(e0, m0, events):
@@ -59,6 +37,24 @@ def AttachTrigSF(e0, m0, events):
   events['sf_trig']    = TrigSFe*TrigSFm
   events['sf_trig_hi'] = TrigSFeup*TrigSFmup
   events['sf_trig_lo'] = TrigSFedo*TrigSFmdo
+
+def GetNBtagNJets(njets, nbtags):
+  '''
+  njets and nbtags are numpy arrays. Let's use these mapping depending on (njets, nbtags)
+  njets goes up to 6, nbtags up to njets or 2 as maximum
+  (0, 0) --> 0
+  (1, 0) --> 1, (1, 1) --> 2
+  (2, 0) --> 3, (2, 1) --> 4, (2, 2) --> 5
+  (3, 0) --> 6, (3, 1) --> 7, (3, >=2) --> 8,
+  (4, 0) --> 9, (4, 1) --> 10, (4, >=2) --> 11,
+  (5, 0) --> 12, (5, 1) --> 13, (5, >=2) --> 14,
+  (>=6, >=0) --> 15
+  '''
+  nbtags = np.minimum(nbtags, 2)
+  vals = np.copy(njets)
+  vals = np.where(vals>=2, 3*(njets-1) + nbtags, vals)
+  vals = np.where(vals==1, njets + nbtags, vals)
+  return vals
 
 class AnalysisProcessor(processor.ProcessorABC):
     def __init__(self, samples, model):
@@ -88,7 +84,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         'invmass_ee' : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("invmass", "$m_{\ell\ell}$ (GeV) ", 30, 70, 110)),
         'njets'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njets",   "Jet multiplicity", 10, 0, 10)),
         'nbtags'     : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("nbtags",  "b-tag multiplicity", 4, 0, 4)),
-        'met'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 10, 0, 200)),
+        'met'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 40, 0, 200)),
         'ht'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ht",      "H$_{T}$ (GeV)", 25, 0, 500)),
         'mt'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mt",      "m$_{T}$ (GeV)", 10, 0, 150)),
         'mlb'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mlb",     "m(l,b) (GeV)", 12, 0, 400)),
@@ -96,6 +92,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         'medianDRjj' : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("medianDRjj", "median$\Delta$R(jj) ", 15, 0, 4.5)),
         'mjj'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mjj",     "m(jj)( (GeV)", 10, 0, 200)),
         'ptjj'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ptjj",    "p$_{T}$(jj) (GeV)", 15, 0, 300)),
+        'njetsnbtags': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njetsnbtags","(j,b)", 16, 0, 16)),
+        'njetsnbtags12': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njetsnbtags","(j,b)", 12, 0, 12)),
   
         'u0pt'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("u0pt",  "Leading u-jet $p_{T}$ (GeV)", 10, 0, 300)),
         'u0eta'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("u0eta", "Leading u-jet $\eta$ ", 12, -2.5, 2.50)),
@@ -224,6 +222,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Muon selection
         mu["isLoose"] = MuonLoose(mu.pt, mu.eta, mu.dxy, mu.dz, mu.sip3d, mu.mediumPromptId, mu.btagDeepB, ptCut=20, etaCut=2.4)
         mu["isMVA"]= MuonMVA(mu.miniPFRelIso_all, mu.mvaTTH)
+        #mu["isIso"] = MuonTightIso(mu)
+        #mu["isTight"] = isMuonPOGMnoIso(mu, ptCut=20, etaCut=2.4) # This is medium prompt, includes dxy, dz
 
         # Electron selection
         #e['pt'] = GetElecPt(e.pt, e.eta, isdata = isData)
@@ -231,12 +231,19 @@ class AnalysisProcessor(processor.ProcessorABC):
         GetElecScale5TeV(e, run=306936, isData=isData)
         e['isLoose'] = ElecLoose(e.pt, e.eta, e.lostHits, e.sip3d, e.dxy, e.dz, e.btagDeepB, e.convVeto, e.mvaFall17V2noIso_WPL, 20, 2.4)
         e['isMVA']   = ElecMVA(e.miniPFRelIso_all, e.mvaTTH)
+        #e['isTight'] = (e.mvaFall17V2Iso_WP80)&(e.pt>20)&(np.abs(e.eta)<2.4)
+        #e['isNoIso'] = (e.mvaFall17V2noIso_WP80)&(e.pt>20)&(np.abs(e.eta)<2.4)&(e.isTight == 0)
+        
 
         # Build loose collections
         m_sel = mu[mu.isLoose & mu.isMVA]
         e_sel = e[e.isLoose & e.isMVA]
         m_fake = mu[mu.isLoose & (mu.isMVA == 0)]
         e_fake = e[e.isLoose & (e.isMVA == 0)]
+        #m_sel = mu[mu.isTight & mu.isIso]
+        #m_fake = mu[mu.isTight & (mu.isIso == 0)]
+        #e_sel = e[e.isTight]
+        #e_fake = e[e.isNoIso]
         e0 = e_sel[ak.argmax(e_sel.pt,axis=-1,keepdims=True)]
         m0 = m_sel[ak.argmax(m_sel.pt,axis=-1,keepdims=True)]
   
@@ -464,6 +471,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Count jets
         njets = ak.num(goodJets)
         ht = ak.sum(goodJets.pt,axis=-1)
+        nbtagnjets = GetNBtagNJets(njets, nbtags)
 
         selections.add("g1jet",  (njets>=1))
         selections.add("g2jets", (njets >= 2))
@@ -528,7 +536,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # ['A_ht', 'A_sumAllPt', 'A_leta', 'A_j0pt', 'A_mjj', 'A_medianDRjj', 'A_drlb']
         mjjpad = ak.pad_none(mjj_nom, 1)
         drjjpad = ak.pad_none(drjjmedian_nom, 1)
-        print('model = ', self.model)
+        #print('model = ', self.model)
         DNNscore_nom , _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lsel0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_nom)])
         DNNscore_fake, _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lfake0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_fak)])
         #  DNNscore_nom = np.ones_like(events['event'], dtype=float)
@@ -568,7 +576,8 @@ class AnalysisProcessor(processor.ProcessorABC):
               DNNscore = DNNscore_fake
             for lev in levels:
               #if syst in systJets and lev != 'incl': lev += syst
-              cuts = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
+              cuts = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] #+ ['metg30']
+              cutsnoMET = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
               cut = selections.all(*cuts)
               weights = weights_dict[ch if not 'fake' in ch else ch[0]].weight(syst if not syst in (['norm']+systJets) else None)
 
@@ -599,10 +608,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                  hout[f'{lev}_ptuu'] = processor.column_accumulator( ak.flatten(ptuu[cut]).to_numpy())
 
               # Fill met norm histos
-              cuts_metg20 = cuts+['metg20']; cuts_metl20 = cuts+['metl20']
-              cuts_metg15 = cuts+['metg15']; cuts_metl15 = cuts+['metl15']
-              cuts_metg30 = cuts+['metg30']; cuts_metl30 = cuts+['metl30']
-              cuts_metg40 = cuts+['metg40']; cuts_metl40 = cuts+['metl40']
+              cuts_metg20 = cutsnoMET+['metg20']; cuts_metl20 = cutsnoMET+['metl20']
+              cuts_metg15 = cutsnoMET+['metg15']; cuts_metl15 = cutsnoMET+['metl15']
+              cuts_metg30 = cutsnoMET+['metg30']; cuts_metl30 = cutsnoMET+['metl30']
+              cuts_metg40 = cutsnoMET+['metg40']; cuts_metl40 = cutsnoMET+['metl40']
               cut_metg20 = selections.all(*cuts_metg20); cut_metl20 = selections.all(*cuts_metl20)
               cut_metg15 = selections.all(*cuts_metg15); cut_metl15 = selections.all(*cuts_metl15)
               cut_metg30 = selections.all(*cuts_metg30); cut_metl30 = selections.all(*cuts_metl30)
@@ -647,6 +656,10 @@ class AnalysisProcessor(processor.ProcessorABC):
               hout['nbtags'].fill(sample=histAxisName, channel=ch, level=lev, nbtags=nbtags_var[cut], syst=syst, weight=weights)
               hout['ht'].fill(sample=histAxisName, channel=ch, level=lev, ht=ht_var[cut], syst=syst, weight=weights)
               hout['met'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cut], syst=syst, weight=weights)
+
+              if lev == 'incl':
+                hout['njetsnbtags'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags=nbtagnjets[cut], syst=syst, weight=weights)
+
               if fillAll:
                 hout['st'].fill(sample=histAxisName, channel=ch, level=lev, st=st[cut], syst=syst, weight=weights)
                 hout['sumallpt'].fill(sample=histAxisName, channel=ch, level=lev, sumallpt=ptSumVecAll[cut], syst=syst, weight=weights)
@@ -729,13 +742,4 @@ class AnalysisProcessor(processor.ProcessorABC):
   
     def postprocess(self, accumulator):
         return accumulator
-
-if __name__ == '__main__':
-    # Load the .coffea files
-    outpath= './coffeaFiles/'
-    pathToModel = 'nn/models/model_04Jul22_07h04m.pkl'
-    #samples     = load(outpath+'samples.coffea')
-    with open(pathToModel, 'rb') as f:
-      model = pickle.load(f)
-    topprocessor = AnalysisProcessor(samples, model)
 

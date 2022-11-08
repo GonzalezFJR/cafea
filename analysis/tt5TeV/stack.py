@@ -1,16 +1,17 @@
 from config import *
 from QCD import *
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 plt = plotter(path, prDic=processDic, bkgList=bkglist, colors=colordic, lumi=lumi, var=var)
 plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
 
 def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, doRatio=True):
-  #doQCD = False
-  qcd = QCD(path, prDic=processDic, bkglist=bkglist, lumi=lumi, categories=categories)
+  doQCD = True
   if not CheckHistoCategories(plt.hists[var], categories):
     print(f'Nop... [{var}] cat = ', categories)
     return
-  plt.ResetExtraBkg(0)
+  plt.ResetExtraBkg()
   plt.SetRatio(doRatio)
   plt.plotData = doData
   plt.SetCategories(categories)
@@ -21,7 +22,8 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   #plt.SetLogY()
   rebin = None; xtit = ''; ytit = ''
   if doQCD: 
-    hqcd = qcd.GetQCD(var)#, categories)
+    qcd = QCD(pathQCD, prDic=processDic, bkglist=bkglist, lumi=lumi, categories=categories, var=var)
+    hqcd = qcd.GetQCD(var, categories, 0)
     #hqcdup = qcd.GetQCD(var, categories,  1)
     #hqcddo = qcd.GetQCD(var, categories, -1)
 
@@ -30,6 +32,8 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
     b0 = 0.4; bN = 2.0
   elif var in ['medianDRjj']:
     b0 = 1; bN = 4.0
+  elif var == "njets" and categories['level'] != 'incl':
+    b0 = 4; bN = 10
   #elif var in ['ht']:
   #  b0 = 2
   elif var in ['st']:
@@ -37,7 +41,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   elif var in ['sumallpt']:
     b0 = 0; bN = 200
     xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
-  elif var in ['DNNscore']:
+  elif var in ['DNNscore','met']:
     b0 = 2;
 
   if b0 is not None:
@@ -71,17 +75,19 @@ def Print2lplots():
         outname = "%s_%s_%s"%(var, c, l)
         Draw(var, cat, outname, outpath=outp)
 
-def Print1lplots():
+def Print1lplots(channels, levels):
+  if not isinstance(channels, list): channels = [channels]
+  if not isinstance(levels, list): levels = [levels]
   outp = outpath+'/1l/'
-  for c in ['e']:#, 'm']:#, ['e','m']]: #, 'e_fake', 'm_fake']:
+  for c in channels: #['m', 'e']:#, ['e','m']]: #, 'e_fake', 'm_fake']:
     doQCD = not 'fake' in c
     doRatio = not 'fake' in c
     #for l in ['incl', 'g2jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
-    for l in ['incl', 'g4jets', '0b']:#, '2j1b', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
+    for l in levels: #['2j1b']:#, '4j1b', '4j2b', 'g5j1b', 'g5j2b']:
       cat = {'channel':c, 'level':l}#, 'syst':'norm'}
       clab = c if not isinstance(c, list) else 'l'
       outp = outpath+'/1l/'+clab+'/'+l+'/'
-      for var in ['met']:#['ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
+      for var in ['met']:#['medianDRjj', 'DNNscore', 'ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']:#, 'DNNscore']: dRlb
         if l=='incl' and var in ['j0pt', 'j0eta']: continue
         if var == 'DNNscore' and not l in ['2j1b', '3j1b', '3j2b']: continue
         outname = "%s_%s_%s"%(var, clab, l)
@@ -94,9 +100,10 @@ if not var is None:
 
 
 else:
-  outpatho = '22sep2022/'
+  outpatho = '03nov2022_orig/'
   outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/' + outpatho
+  if not os.path.exists(outpath): os.makedirs(outpath)
   #Print2lplots()
-  Print1lplots()
+  Print1lplots('m', ['2j1b'])
 
 

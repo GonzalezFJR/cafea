@@ -37,6 +37,7 @@ if __name__ == '__main__':
   parser.add_argument('--treename'   , default='Events', help = 'Name of the tree inside the files')
   parser.add_argument('--jobs', '-j',  action='store_true', help = 'send jobs')
   parser.add_argument('--queue', '-q'  , default='batch', help = 'Queue to send jobs')
+  parser.add_argument('--exclude', '-x', default=None, help = 'Exclude nodes')
   
   args = parser.parse_args()
   jsonFiles        = args.jsonFiles
@@ -51,6 +52,7 @@ if __name__ == '__main__':
   treename         = args.treename
   jobs             = args.jobs
   queue            = args.queue
+  exclude          = args.exclude
 
   if dotest:
     nchunks = 2
@@ -62,10 +64,19 @@ if __name__ == '__main__':
     command = " ".join(sys.argv[:])
     command = command.replace(" --jobs ", " ").replace("-j", " ")
     if not command.startswith('python '): command = 'python ' +  command
-    commandJob = 'sbatch -p %s -c %i --wrap "%s"'%(queue, nworkers, command)
+    commandJob = 'sbatch -p %s -c %i %s --wrap "%s"'%(queue, nworkers, ("-x " + exclude) if exclude is not None else '', command)
     print(commandJob)
     os.system(commandJob)
     exit()
+
+  import multiprocessing
+  nCPUcores = multiprocessing.cpu_count()
+  if nworkers > nCPUcores:
+    print("WAIT !! You only have %i available cores in this PC!!"%nCPUcores)
+    exit()
+  elif nworkers == nCPUcores:
+    print("WARNING: Your are running with all the cores in your machine!")
+  
 
   ### Load samples from json
   samplesdict = {}

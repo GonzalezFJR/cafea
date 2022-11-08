@@ -13,8 +13,9 @@ plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
 plt.SetYRatioTit('Ratio')
 plt.SetOutput(output)
 if doData:
-  hQCD = GetQCDbkg(var, categories)
-  plt.AddExtraBkgHist([hQCD])
+  qcd = QCD(path, prDic=processDic, bkglist=bkglist, lumi=lumi, categories=categories, var=var)
+  hqcd = qcd.GetQCD(var, categories, 0)
+  plt.AddExtraBkgHist([hqcd])
 
 
 def DrawAllForVar(var):

@@ -36,24 +36,32 @@ class QCD:
   def LoadQCDForVar(self, var):
     ''' Compute (data - MC) for a given distribution (dense_axis) '''
     if self.doAllChan:
+      #print("doAllChan = True!!")
       h_data_fake = self.plt.GetHistogram(var, ['data'],{}).group('channel', hist.Cat("channel", "channel"), {'e':'e_fake', 'm':'m_fake'}).group('process', hist.Cat("process", "process"), {'QCD':'data'} )
       h_mc_fake   = self.plt.GetHistogram(var, bkglist, {}).group('channel', hist.Cat("channel", "channel"), {'e':'e_fake', 'm':'m_fake'}).group('process', hist.Cat("process", "process"), {'QCD':bkglist})
     else:
+      #print("Getting data for categories: ", self.cat_fake, "and var: ", var)
       h_data_fake = self.plt.GetHistogram(var, ['data'], self.cat_fake).group('process', hist.Cat("process", "process"), {'QCD':'data'})
       h_mc_fake   = self.plt.GetHistogram(var, bkglist, self.cat_fake).group('process', hist.Cat("process", "process"), {'QCD':bkglist})
     h_mc_fake.scale(-1*self.lumi)
     systlist = [x.name for x in list(h_mc_fake.identifiers('syst'))]
     h_data_fake = self.FillDataSystCategories(h_data_fake, systlist, var)
     htot = (h_data_fake + h_mc_fake)
+    #print("h_data_fake = ", h_data_fake.values())
+    #print("h_mc_fake = ", h_mc_fake.values())
+    #print("htot = ", htot.values())
+    #PrintHisto(htot)
     return htot
 
   def LoadHistos(self):
     ''' Load all the histograms '''
     self.plt = plotter(self.path, prDic=self.prDic,  bkgList=self.bkglist, lumi=self.lumi)
-    self.cat_fake = self.categories.copy()
+    #self.cat_fake = self.categories.copy()
     if self.varlist is None: self.varlist = self.plt.GetListOfVars()
     for var in self.varlist:
       if not CheckHistoCategories(self.plt.GetHistogram(var), {'channel' : 'e_fake', 'process':['data']+bkglist}, checkValues=True) and not CheckHistoCategories(self.plt.GetHistogram(var), {'channel' : 'm_fake', 'process':['data']+bkglist}, checkValues=True):
+        PrintHisto(self.plt.GetHistogram(var))
+        print("skipping var: ", var)
         continue
       dense_axes = [x.name for x in self.plt.GetHistogram(var).dense_axes()]
       if len(dense_axes) > 1: continue
@@ -89,35 +97,60 @@ class QCD:
       cat_fake  ['channel'] = ['e_fake', 'm_fake']
     else:
       cat_fake['channel'] = [(c+'_fake' if not 'fake' in c else c) for c in cat_fake['channel']]
-    countsData = 'counts_metl20'
     if   sys== 1: countsData = 'counts_metl30'
     elif sys==-1: countsData = 'counts_metl15'
+    else:         countsData = 'counts_metl20'
     data_metl20    = self.plt.GetYields(countsData, categories, pr='data', overflow='none')
     mc_metl20      = self.plt.GetYields(countsData, categories, pr=self.bkglist, overflow='none')
     data_metl20_fk = self.plt.GetYields(countsData, cat_fake,   pr='data', overflow='none')
     mc_metl20_fk   = self.plt.GetYields(countsData, cat_fake,   pr=self.bkglist, overflow='none')
-    print('data_metl20 = %f, mc_metl20 = %f, data_metl20_fk = %f, mc_metl20_fk = %f'%(data_metl20, mc_metl20, data_metl20_fk, mc_metl20_fk))
     fact = (data_metl20 - mc_metl20)/(data_metl20_fk - mc_metl20_fk)
-    print('fact = ', fact)
+    #print("sys = ", sys, ", countsData = ", countsData, ", data prompt = ", data_metl20, ", mc prompt = ", mc_metl20, ", data fakes = ", data_metl20_fk, ", mc fakes = ", mc_metl20_fk,  ", fact = ", fact)
     #print('data_metl20 = %f, mc_metl20 = %f, data_metl20_fk = %f, mc_metl20_fk = %f, fact = %f'%(data_metl20, mc_metl20, data_metl20_fk, mc_metl20_fk, fact))
     return fact
 
   def GetNorm(self, sys=0):
     return self.norm[sys]
 
-  def GetQCD(self, var, categories={}, sys=0):
-    fact = self.GetNormalization(categories, sys)
+  def GetQCD(self, var, categories={}, sys=False):
+    fact = self.GetNormalization(categories, 0)
     #print('sys = ', sys, 'fact = ', fact)
     h = self.QCDhist[var].copy()
     for cat in categories: 
+      axes = list(h.sparse_axes())
+      if not cat in axes: continue
       h = h.integrate(cat, categories[cat])
+    if sys:
+      hup = h.copy()
+      hdo = h.copy()
+      factup = self.GetNormalization(categories, 1)
+      factdo = self.GetNormalization(categories,-1)
+      hup.scale(factup)
+      hdo.scale(factdo)
+      hup = GroupKeepOrder(hup, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+      hdo = GroupKeepOrder(hdo, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
     h.scale(fact)
-    if sys==1: # Up
-      #h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}, 'keep']])
-      h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
-    elif sys==-1: # Down
-      #h = GroupKeepOrder(h, ['syst', 'syst', {'QCDDown':'norm'}])
-      h = GroupKeepOrder(h, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+    if sys:
+      h += (hup + hdo)
+    #if sys==1: # Up
+    #  #h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}, 'keep']])
+    #  h = GroupKeepOrder(h, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+    #elif sys==-1: # Down
+    #  #h = GroupKeepOrder(h, ['syst', 'syst', {'QCDDown':'norm'}])
+    #  h = GroupKeepOrder(h, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+    #print("sys = ", sys, ", h = ", h)
+    #PrintHisto(h)
     return h
 
 
+if __name__ == '__main__':
+  from config import *
+  qcd = QCD(path, prDic=processDic, bkglist=bkglist, lumi=lumi, categories={'channel':ch, 'level':level}, var=var)
+  hqcd = qcd.GetQCD(var, {'channel':ch, 'level':level}, 1)
+  qcdnom = hqcd.integrate('syst', 'norm').integrate('process', 'QCD')
+  qcdup  = hqcd.integrate('syst', 'QCDUp').integrate('process', 'QCD')
+  qcddo  = hqcd.integrate('syst', 'QCDDown').integrate('process', 'QCD')
+
+  labels = ['QCD', 'QCD Up', 'QCD Down']
+  colors = ['black', 'red', 'blue']
+  DrawComp([qcdnom, qcdup, qcddo], colors=colors, axis=var, title='', labels=labels, xtit=var, ytit=None, doFill=None, outname=output)

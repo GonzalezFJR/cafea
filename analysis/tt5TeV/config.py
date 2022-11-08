@@ -39,6 +39,8 @@ if outpatho is None: outpatho = 'temp/'
 if not outpatho.endswith('/'): outpatho += '/'
 #syst = 'norm'
 
+pathQCD = path
+
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]
@@ -49,7 +51,7 @@ year = 2017
 processDic = {
   'tt': 'ttPS',#, ttPS',
   'tW': 'tbarW, tW',
-  'WJets': 'WJetsToLNu',#, W0JetsToLNu, W1JetsToLNu, W2JetsToLNu, W3JetsToLNu',
+  'WJets': 'WJetsToLNu',#  'W0JetsToLNu, W1JetsToLNu, W2JetsToLNu, W3JetsToLNu',
   'DY': 'DYJetsToLLMLL50, DYJetsToLLM10to50',
   'data' : 'SingleMuon, HighEGJet',
 }

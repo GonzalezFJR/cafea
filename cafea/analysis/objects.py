@@ -74,6 +74,9 @@ def ElecLoose(pt, eta, lostHits, sip3d, dxy, dz, btagDeepFlavB, convVeto, elecMV
 
 def ElecMVA(miniPFRelIso, lepMVA):
   return ( (miniPFRelIso<0.085) & (lepMVA>0.125) )
+
+def ElecMVAantiIso(miniPFRelIso, lepMVA):
+  return ( (miniPFRelIso>0.085) & (lepMVA>0.125) )
   
 def MuonLoose(pt, eta, dxy, dz, sip3d, mediumPrompt, btagDeepFlavB, ptCut = 20., etaCut = 2.4):
   pt_mask = (pt > ptCut)
@@ -88,6 +91,8 @@ def MuonLoose(pt, eta, dxy, dz, sip3d, mediumPrompt, btagDeepFlavB, ptCut = 20.,
 def MuonMVA(miniPFRelIso, lepMVA):
    return ( (miniPFRelIso<0.325) & (lepMVA>0.55) )
 
+def MuonMVAantiIso(miniPFRelIso, lepMVA):
+   return ( (miniPFRelIso>0.325) & (lepMVA>0.55) )
 
 def isPresMuon(dxy, dz, sip3d, eta, pt, miniRelIso):
     pt_mask    = (pt         > get_param("pres_m_pt_cut"))
@@ -168,6 +173,10 @@ def isMuonPOGM(muons, ptCut=20, etaCut=2.4):
   ''' https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonSelection '''
   return (MuonTightIso(muons))&(MuonMediumPrimptID(muons)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
 
+def isMuonPOGMnoIso(muons, ptCut=20, etaCut=2.4):
+  ''' https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideMuonSelection '''
+  return (MuonMediumPrimptID(muons)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
+
 def isMuonPOGL(muons, ptCut=20, etaCut=2.4):
   return ((muons.pfRelIso04_all < 0.4)&(muons.pt>ptCut)&(np.abs(muons.eta)<etaCut))
 
@@ -180,8 +189,8 @@ def isElectronMVA(electrons, ptCut=20, etaCut=2.5):
 
 def isElectronCutBased(electrons, ptCut=20, etaCut=2.5):
   #return (electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20) # XXX
-  #return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
-  return (electrons.isCutBasedTight)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+  return (electrons.cutBased == 4)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
+  #return (electrons.isCutBasedTight)&(electrons.pt>ptCut)&(np.abs(electrons.eta)<etaCut)&(np.abs(electrons.dxy)<0.10)&(np.abs(electrons.dz)<0.20)
 
 def isElectronTight(electrons, ptCut=20, etaCut=2.5):
   etasc = np.abs(electrons.eta+electrons.deltaEtaSC)

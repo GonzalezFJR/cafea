@@ -3,7 +3,7 @@ from collections import defaultdict, OrderedDict
 import gzip
 import pickle
 import json
-import os
+import os, copy
 import uproot
 import matplotlib.pyplot as plt
 import numpy as np
@@ -267,7 +267,7 @@ def GetSFfromCountsHisto(hnumMC, hdenMC, hnumData, hdenData):
   ratio, do, up = GetRatioAssymetricUncertainties(Yda[0], Yda[1], Yda[2], Ymc[0], Ymc[1], Ymc[2])
   return ratio, do, up
 
-def PrintHisto(histo):
+def PrintHisto(histo, printValues=False):
   for ax in [x.name for x in histo.sparse_axes()]:
     print("# Sparse axis [%s] -- Identifiers: "%ax)
     for idt in histo.identifiers(ax):
@@ -275,6 +275,8 @@ def PrintHisto(histo):
   for ax in [x.name for x in histo.dense_axes()]:
     print("# Dense axis [%s] -- bins: "%(ax))
     print("   - ", histo.identifiers(ax))
+  if printValues:
+    print("Values: ", histo.values())
 
 '''
 def GetHistoUnc(h, systList, systLabel='syst', nomlabel='norm', doRelative=True, includeStat=True):
@@ -812,7 +814,7 @@ class plotter:
   def GetHistogram(self, hname, process=None, categories=None, removeProcessAxis=True):
     ''' Returns a histogram with all categories contracted '''
     if categories == None: categories = self.categories
-    h = self.hists[hname]
+    h = (self.hists[hname].copy())
     if isinstance(process, str) and ',' in process: process = process.split(',')
     if isinstance(process, list): 
       prdic = {}
@@ -1110,6 +1112,8 @@ class plotter:
     h.scale(self.lumi*self.MCnorm)
     if xtit=='': xtit = h.axis(aname).label
     self.AddExtraBkgToHisto(h)
+    #for bkg in h.identifiers("process"):
+    #  hb = h.integrate("process", bkg).integrate("syst", "norm")
 
     # Colors
     from cycler import cycler

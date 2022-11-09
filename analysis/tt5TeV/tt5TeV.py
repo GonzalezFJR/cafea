@@ -23,7 +23,7 @@ from NN import EvaluateModelForArrays, EvaluateModelForDataset
 fillAll = True
 fillDNN = True
 doSyst = True
-fillAcc = True
+fillAcc = False
 
 def AttachTrigSF(e0, m0, events):
   TrigSFe, TrigSFedo, TrigSFeup = GetTriggerSF5TeV(e0.pt, np.abs(e0.eta), 'e')
@@ -147,24 +147,24 @@ class AnalysisProcessor(processor.ProcessorABC):
         '3j1b_muu' : processor.column_accumulator(np.array([])),
         '3j1b_ptuu' : processor.column_accumulator(np.array([])),
 
-        '2j1b_njets' : processor.column_accumulator(np.array([])),
-        '2j1b_nbtags' : processor.column_accumulator(np.array([])),
-        '2j1b_ht' : processor.column_accumulator(np.array([])),
-        '2j1b_st' : processor.column_accumulator(np.array([])),
-        '2j1b_sumAllPt' : processor.column_accumulator(np.array([])),
-        '2j1b_leta' : processor.column_accumulator(np.array([])),
-        '2j1b_j0pt' : processor.column_accumulator(np.array([])),
-        '2j1b_j0eta' : processor.column_accumulator(np.array([])),
-        '2j1b_u0pt' : processor.column_accumulator(np.array([])),
-        '2j1b_u0eta' : processor.column_accumulator(np.array([])),
-        '2j1b_ptjj' : processor.column_accumulator(np.array([])),
-        '2j1b_mjj' : processor.column_accumulator(np.array([])),
-        '2j1b_medianDRjj' : processor.column_accumulator(np.array([])),
-        '2j1b_minDRjj' : processor.column_accumulator(np.array([])),
-        '2j1b_mlb' : processor.column_accumulator(np.array([])),
-        '2j1b_mt' : processor.column_accumulator(np.array([])),
-        '2j1b_ptsumveclb' : processor.column_accumulator(np.array([])),
-        '2j1b_drlb' : processor.column_accumulator(np.array([])),
+        '3j2b_njets' : processor.column_accumulator(np.array([])),
+        '3j2b_nbtags' : processor.column_accumulator(np.array([])),
+        '3j2b_ht' : processor.column_accumulator(np.array([])),
+        '3j2b_st' : processor.column_accumulator(np.array([])),
+        '3j2b_sumAllPt' : processor.column_accumulator(np.array([])),
+        '3j2b_leta' : processor.column_accumulator(np.array([])),
+        '3j2b_j0pt' : processor.column_accumulator(np.array([])),
+        '3j2b_j0eta' : processor.column_accumulator(np.array([])),
+        '3j2b_u0pt' : processor.column_accumulator(np.array([])),
+        '3j2b_u0eta' : processor.column_accumulator(np.array([])),
+        '3j2b_ptjj' : processor.column_accumulator(np.array([])),
+        '3j2b_mjj' : processor.column_accumulator(np.array([])),
+        '3j2b_medianDRjj' : processor.column_accumulator(np.array([])),
+        '3j2b_minDRjj' : processor.column_accumulator(np.array([])),
+        '3j2b_mlb' : processor.column_accumulator(np.array([])),
+        '3j2b_mt' : processor.column_accumulator(np.array([])),
+        '3j2b_ptsumveclb' : processor.column_accumulator(np.array([])),
+        '3j2b_drlb' : processor.column_accumulator(np.array([])),
         })
 
     @property
@@ -581,7 +581,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               cut = selections.all(*cuts)
               weights = weights_dict[ch if not 'fake' in ch else ch[0]].weight(syst if not syst in (['norm']+systJets) else None)
 
-              if fillAcc and not isData and syst=='norm' and ch in ['e', 'm'] and lev in ['2j1b', '3j1b']:
+              if fillAcc and not isData and syst=='norm' and ch in ['e', 'm'] and lev in ['3j2b', '3j1b']:
                hout[f'{lev}_njets'] = processor.column_accumulator(njets[cut].to_numpy())
                hout[f'{lev}_nbtags'] = processor.column_accumulator(nbtags[cut].to_numpy())
                hout[f'{lev}_ht'] = processor.column_accumulator(ht[cut].to_numpy())

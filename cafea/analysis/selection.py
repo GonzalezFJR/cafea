@@ -517,45 +517,43 @@ def GetMT(lepton, met):
 
     return np.sqrt( np.square(lepton.pt + met_pt) - np.square(lepton.px + met_px) - np.square(lepton.py + met_py) )
 
-def GetMlb(lepton, jets):
+def GetMlb(lepton, jets, btagvar='isBtag', nbs=0):
    ''' Invariant mass of lepton and b '''
    # Masks
-   nbtags = ak.num(jets[jets['isBtag']])
+   nbtags = ak.num(jets[jets[btagvar]])
    mask_0b = (nbtags == 0)
    mask_1b = (nbtags == 1)
-   mask_2b = (nbtags >= 2)
+   mask_2b = (nbtags >= 1)
 
    # 0b --> take leading jet
-   jets_0b = jets[mask_0b]
-   leps_0b = lepton[mask_0b]
-   j0 = jets_0b[ak.argmax(jets_0b.pt,axis=-1,keepdims=True)]
-   mlb_0b = (j0+leps_0b).mass
-   ak.fill_none(mlb_0b, -1)
-   mlbi = mlb_0b[np.invert((mlb_0b>=0))]
-   #print('mlb_0b = ', len(mlb_0b), ', ', mlbi[ak.count(mlbi)>0] if len(mlbi)>0 else 0)
+   if nbs == 0:
+     jets_0b = jets[mask_0b]
+     leps_0b = lepton[mask_0b]
+     j0 = jets_0b[ak.argmax(jets_0b.pt,axis=-1,keepdims=True)]
+     l0 = ak.flatten(leps_0b)
+     j0 = ak.flatten(j0)
+     mlb_0b = (j0+leps_0b).mass
+     mlbi = ak.flatten(mlb_0b)
 
    # 1b --> Only one posibility
-   jets_1b = jets[mask_1b]
-   leps_1b = lepton[mask_1b]
-   jets_1b = jets_1b[(jets_1b.isBtag)]
-   jet_b = ak.flatten(jets_1b)
-   lepts_1b = ak.flatten(leps_1b)
-   mlb_1b = (jet_b+leps_1b).mass
-   ak.fill_none(mlb_1b, -1)
-   mlbi = mlb_1b[np.invert((mlb_1b>=0))]
-   #print('mlb_1b = ', len(mlb_1b), ', ', mlbi[ak.count(mlbi)>0] if len(mlbi)>0 else 0)
+   elif nbs ==8:
+     jets_1b = jets[mask_1b]
+     leps_1b = lepton[mask_1b]
+     jets_1b = jets_1b[(jets_1b.isBtag)]
+     jet_b = ak.flatten(jets_1b)
+     lepts_1b = ak.flatten(leps_1b)
+     mlb_1b = (jet_b+leps_1b).mass
+     mlbi = ak.flatten(mlb_1b)
 
    # 2b --> Calculate all the combinations and get the one with minimum m(l,b)
-   jets_g2b = jets[mask_2b]
-   leps_g2b = lepton[mask_2b]
-   jets_b = jets_g2b[jets_g2b.isBtag]
-   l, b = ak.unzip(ak.cartesian([leps_g2b, jets_b], axis=1))
-   mlb_2b = (l+b).mass
-   argmin = ak.unflatten(ak.argmin(mlb_2b, axis=1), np.ones_like(ak.argmin(mlb_2b, axis=1)))
-   mlb_2b = mlb_2b[argmin]
-   ak.fill_none(mlb_2b, -1)
-   mlbi = mlb_2b[np.invert((mlb_2b>=0))]
-   mlb = ak.concatenate([mlb_0b, mlb_1b, mlb_2b])
-   #print('mlb_2b = ', len(mlb_2b), ', ', mlbi[ak.count(mlbi)>0] if len(mlbi)>0 else 0)
-   #print('mlb = ', len(mlb), ', ', mlb)
-   return mlb
+   else:
+     jets_g2b = jets[mask_2b]
+     leps_g2b = lepton[mask_2b]
+     jets_b = jets_g2b[jets_g2b.isBtag]
+     l, b = ak.unzip(ak.cartesian([leps_g2b, jets_b], axis=1))
+     mlb_2b = (l+b).mass
+     argmin = ak.unflatten(ak.argmin(mlb_2b, axis=1), np.ones_like(ak.argmin(mlb_2b, axis=1)))
+     mlb_2b = mlb_2b[argmin]
+     mlbi = ak.flatten(mlb_2b)
+
+   return mlbi

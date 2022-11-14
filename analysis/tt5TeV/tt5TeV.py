@@ -21,7 +21,7 @@ from cafea.modules.paths import cafea_path
 from NN import EvaluateModelForArrays, EvaluateModelForDataset
 
 fillAll = True
-fillDNN = True
+fillDNN = False
 doSyst = True
 fillAcc = False
 
@@ -480,9 +480,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("0b",    ((njets >= 4) & (nbtags==0)) )
         selections.add("1b",    ((njets >= 4) & (nbtags==1)) )
         selections.add("2b",    ((njets >= 4) & (nbtags>=2)) )
-        selections.add("2j1b",  ((njets == 2) & (nbtags>=1)) )
-        selections.add("3j1b",  ((njets == 3) & (nbtags==1)) )
-        selections.add("3j2b",  ((njets == 3) & (nbtags>=2)) )
+        selections.add("2j1b",  ((njets == 2) & (nbtags>=1) & (met.pt>=30)) )
+        selections.add("3j1b",  ((njets == 3) & (nbtags==1) & (met.pt>=30)) )
+        selections.add("3j2b",  ((njets == 3) & (nbtags>=2) & (met.pt>=30)) )
         selections.add("4j1b",  ((njets == 4) & (nbtags==1)) )
         selections.add("4j2b",  ((njets == 4) & (nbtags>=2)) )
         selections.add("g5j1b", ((njets >= 5) & (nbtags==1)) )
@@ -597,7 +597,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                hout[f'{lev}_mjj'] = processor.column_accumulator(ak.flatten(mjj[cut]).to_numpy())
                hout[f'{lev}_medianDRjj'] = processor.column_accumulator(ak.flatten(drjjmedian[cut]).to_numpy())
                hout[f'{lev}_minDRjj'] = processor.column_accumulator(ak.flatten(drjj[cut]).to_numpy())
-               hout[f'{lev}_mlb'] = processor.column_accumulator( ak.flatten(GetMlb(l_sel[cut], goodJets[cut])) .to_numpy())
+               hout[f'{lev}_mlb'] = processor.column_accumulator( ak.flatten(GetMlb(l_sel[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1]))) .to_numpy())
                hout[f'{lev}_mt'] = processor.column_accumulator( ak.flatten(GetMT(l_sel, met)[cut]) .to_numpy())
                hout[f'{lev}_ptsumveclb'] = processor.column_accumulator( ptSumVeclb[cut].to_numpy())
                hout[f'{lev}_drlb'] = processor.column_accumulator( ak.flatten(dRlb[cut]).to_numpy())
@@ -688,21 +688,23 @@ class AnalysisProcessor(processor.ProcessorABC):
                   ept  = ak.flatten(e.pt [cut])
                   eeta = ak.flatten(e.eta[cut])
                   mt = ak.flatten(GetMT(e, met)[cut])
-                  mlb = ak.flatten(GetMlb(e[cut], goodJets[cut]))
                   hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept=ept, syst=syst, weight=weights)
                   hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=eeta, syst=syst, weight=weights)
                   hout['mt'].fill(sample=histAxisName, channel=ch, level=lev, mt=mt, syst=syst, weight=weights)
-                  #hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
+                  if lev in ['0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']:
+                     mlb = (GetMlb(e[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1])) )
+                     hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
                 elif ch in ['m', 'm_fake']:
                   m = m_sel if ch == 'm' else m_fake
                   mpt  = ak.flatten(m.pt[cut])
                   meta = ak.flatten(m.eta[cut])
-                  mlb = ak.flatten(GetMlb(m[cut], goodJets[cut]))
                   mt = ak.flatten(GetMT(m, met)[cut])
                   hout['mpt'].fill(sample=histAxisName, channel=ch, level=lev, mpt=mpt, syst=syst, weight=weights)
                   hout['meta'].fill(sample=histAxisName, channel=ch, level=lev,meta = meta, syst=syst, weight=weights)
                   hout['mt'].fill(sample=histAxisName, channel=ch, level=lev, mt=mt, syst=syst, weight=weights)
-                  #hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
+                  if lev in ['0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']:
+                     mlb = (GetMlb(m[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1])) )
+                     hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
                 elif ch in ['em', 'ee', 'mm']:
                   llpairs = ak.combinations(l_sel[cut], 2, fields=["l0","l1"])
                   mll = (llpairs.l0+llpairs.l1).mass # Invmass for leading two leps

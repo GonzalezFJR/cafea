@@ -517,8 +517,51 @@ def GetMT(lepton, met):
 
     return np.sqrt( np.square(lepton.pt + met_pt) - np.square(lepton.px + met_px) - np.square(lepton.py + met_py) )
 
-def GetMlb(lepton, jets, btagvar='isBtag', nbs=0):
-   ''' Invariant mass of lepton and b '''
+
+
+def GetMlb0b(lepton, jets):
+   ''' Invariant mass of lepton and b -- WARNING: run this after applying cuts '''
+   l0 = ak.flatten(lepton)
+   j0 = jets[ak.argmax(jets.pt,axis=-1,keepdims=True)]
+   j0 = ak.flatten(j0)
+   mlb = (j0+l0).mass
+   return mlb
+
+def GetMlb1b(lepton, jets):
+   ''' Invariant mass of lepton and b -- WARNING: run this after applying cuts '''
+   # 1b --> Only one posibility
+   jet_b = jets[(jets.isBtag)]
+   jet_b = ak.flatten(jet_b)
+   lep = ak.flatten(lepton)
+   if len(jet_b) != len(lep):
+     print("WARNING: Number of bjets and leptons are not the same")
+     print('Number of bjets: ', len(jet_b), ' .. Number of leptons: ', len(lep), '\n')
+   mlb = (jet_b+lep).mass
+   return mlb 
+
+def GetMlb2b(lepton, jets):
+   ''' Invariant mass of lepton and b -- WARNING: run this after applying cuts '''
+   jets_b = jets[jets.isBtag]
+   l, b = ak.unzip(ak.cartesian([lepton, jets_b], axis=1))
+   mlb_2b = (l+b).mass
+   argmin = ak.unflatten(ak.argmin(mlb_2b, axis=1), np.ones_like(ak.argmin(mlb_2b, axis=1)))
+   mlb_2b = mlb_2b[argmin]
+   mlb = ak.flatten(mlb_2b)
+   return mlb
+
+def GetMlb(lepton, jets, nb):
+    ''' WARNING: run this after applying cuts '''
+    if nb == 0:
+        mlb = GetMlb0b(lepton, jets)
+    elif nb == 1:
+        mlb = GetMlb1b(lepton, jets)
+    elif nb == 2:
+        mlb = GetMlb2b(lepton, jets)
+    return mlb
+
+#def GetMlb(lepton, jets, btagvar='isBtag', nbs=0):
+''' Invariant mass of lepton and b '''
+'''
    # Masks
    nbtags = ak.num(jets[jets[btagvar]])
    mask_0b = (nbtags == 0)
@@ -557,3 +600,4 @@ def GetMlb(lepton, jets, btagvar='isBtag', nbs=0):
      mlbi = ak.flatten(mlb_2b)
 
    return mlbi
+'''

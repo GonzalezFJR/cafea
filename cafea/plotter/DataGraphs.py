@@ -70,8 +70,8 @@ def DrawPairPlots(df, colnames, savefig=None, labname='label', **kwargs):
 def DrawHistos(df, colnames, savefig=None, labname='label', **kwargs):
     ''' Draw histograms from a pandas dataframe '''
     N = len(colnames)
-    ncol = int(np.sqrt(N))
-    nrow = int(np.ceil(N/ncol))
+    nrow = int(np.sqrt(N))
+    ncol = int(np.ceil(N/nrow))
     fig, axes = plt.subplots(nrow, ncol, figsize=(ncol*4, nrow*4))
     for i, name in enumerate(colnames):
         ax = axes[i//ncol, i%ncol]
@@ -163,7 +163,7 @@ def DrawRanking(model, df, columns, savefig=None):
     feature_importances = pd.DataFrame(model.feature_importances_,index = df[columns].columns,columns=['importance']).sort_values('importance',ascending=False)   
     print(feature_importances)
     plt.figure(figsize=(10, 10))
-    sns.barplot(x=feature_importances.importance, y=feature_importances.index, hue=feature_importances.importance, width=0.8, dodge=False)
+    sns.barplot(x=feature_importances.importance, y=feature_importances.index, hue=feature_importances.importance, width=0.8, dodge=False, palette='Blues_d')
     plt.gca().get_legend().set_title('Ranking')
     # invert order of the elements in the legend
     handles, labels = plt.gca().get_legend_handles_labels()

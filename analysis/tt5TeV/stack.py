@@ -37,12 +37,14 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   #elif var in ['ht']:
   #  b0 = 2
   elif var in ['st']:
-    b0 = 100; bN = 600;
+    b0 = 120; bN = 600;
   elif var in ['sumallpt']:
     b0 = 0; bN = 200
     xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
-  elif var in ['DNNscore','met']:
+  elif var in ['DNNscore','met','u0pt', 'ptuu', 'ptjj']:
     b0 = 2;
+  elif var in ['ht']:
+    b0 = 4;
 
   if b0 is not None:
     plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
@@ -100,7 +102,7 @@ if not var is None:
 
 
 else:
-  outpatho = '03nov2022_orig/'
+  outpatho = '28nov2022/'
   outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/' + outpatho
   if not os.path.exists(outpath): os.makedirs(outpath)
   #Print2lplots()

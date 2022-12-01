@@ -86,6 +86,7 @@ def main():
   verbose      = args.verbose
   update       = args.update
   split        = int(args.split)
+  if histAxisName == '': histAxisName = args.sampleName
   if update:
     AddSumWeightToJson(path)
     return

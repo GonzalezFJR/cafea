@@ -60,7 +60,6 @@ class QCD:
     if self.varlist is None: self.varlist = self.plt.GetListOfVars()
     for var in self.varlist:
       if not CheckHistoCategories(self.plt.GetHistogram(var), {'channel' : 'e_fake', 'process':['data']+bkglist}, checkValues=True) and not CheckHistoCategories(self.plt.GetHistogram(var), {'channel' : 'm_fake', 'process':['data']+bkglist}, checkValues=True):
-        PrintHisto(self.plt.GetHistogram(var))
         print("skipping var: ", var)
         continue
       dense_axes = [x.name for x in self.plt.GetHistogram(var).dense_axes()]
@@ -141,6 +140,14 @@ class QCD:
     #print("sys = ", sys, ", h = ", h)
     #PrintHisto(h)
     return h
+
+  def GetYield(self, categories, var='counts'):
+    hqcd = self.GetQCD(var, categories)
+    for cat in categories:
+      axes = list(hqcd.sparse_axes())
+      if not cat in axes: continue
+      hqcd = hqcd.integrate(cat, categories[cat])
+    return hqcd.values()[('QCD',)][0]
 
 
 if __name__ == '__main__':

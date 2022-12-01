@@ -21,7 +21,7 @@ from cafea.modules.paths import cafea_path
 from NN import EvaluateModelForArrays, EvaluateModelForDataset
 
 fillAll = True
-fillDNN = False
+fillMVA = False
 doSyst = True
 fillAcc = False
 
@@ -480,9 +480,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("0b",    ((njets >= 4) & (nbtags==0)) )
         selections.add("1b",    ((njets >= 4) & (nbtags==1)) )
         selections.add("2b",    ((njets >= 4) & (nbtags>=2)) )
-        selections.add("2j1b",  ((njets == 2) & (nbtags>=1) & (met.pt>=30)) )
-        selections.add("3j1b",  ((njets == 3) & (nbtags==1) & (met.pt>=30)) )
-        selections.add("3j2b",  ((njets == 3) & (nbtags>=2) & (met.pt>=30)) )
+        selections.add("2j1b",  ((njets == 2) & (nbtags>=1)) )# & (met.pt>=30)) )
+        selections.add("3j1b",  ((njets == 3) & (nbtags==1)) )# & (met.pt>=30)) )
+        selections.add("3j2b",  ((njets == 3) & (nbtags>=2)) )# & (met.pt>=30)) )
         selections.add("4j1b",  ((njets == 4) & (nbtags==1)) )
         selections.add("4j2b",  ((njets == 4) & (nbtags>=2)) )
         selections.add("g5j1b", ((njets >= 5) & (nbtags==1)) )
@@ -503,9 +503,9 @@ class AnalysisProcessor(processor.ProcessorABC):
           selections.add("1bJESUp", ((njetsJESUp >= 4) & (nbtagsJESUp ==1)) )
           selections.add("2bJESUp", ((njetsJESUp >= 4) & (nbtagsJESUp >=2)) )
 
-          selections.add("2j1bJESUp",  ((njetsJESUp == 2) & (nbtagsJESUp>=1)) )
-          selections.add("3j1bJESUp",  ((njetsJESUp == 3) & (nbtagsJESUp==1)) )
-          selections.add("3j2bJESUp",  ((njetsJESUp == 3) & (nbtagsJESUp>=2)) )
+          selections.add("2j1bJESUp",  ((njetsJESUp == 2) & (nbtagsJESUp>=1) ))
+          selections.add("3j1bJESUp",  ((njetsJESUp == 3) & (nbtagsJESUp==1) ))
+          selections.add("3j2bJESUp",  ((njetsJESUp == 3) & (nbtagsJESUp>=2) ))
           selections.add("4j1bJESUp",  ((njetsJESUp == 4) & (nbtagsJESUp==1)) )
           selections.add("4j2bJESUp", ((njetsJESUp == 4) & (nbtagsJESUp>=2)) )
           selections.add("g5j1bJESUp", ((njetsJESUp >= 5) & (nbtagsJESUp==1)) )
@@ -519,9 +519,9 @@ class AnalysisProcessor(processor.ProcessorABC):
           selections.add("1bJESDo", ((njetsJESDo >= 4) & (nbtagsJESDo ==1)) )
           selections.add("2bJESDo", ((njetsJESDo >= 4) & (nbtagsJESDo >=2)) )
 
-          selections.add("2j1bJESDo",  ((njetsJESDo == 2) & (nbtagsJESDo>=1)) )
-          selections.add("3j1bJESDo",  ((njetsJESDo == 3) & (nbtagsJESDo==1)) )
-          selections.add("3j2bJESDo",  ((njetsJESDo == 3) & (nbtagsJESDo>=2)) )
+          selections.add("2j1bJESDo",  ((njetsJESDo == 2) & (nbtagsJESDo>=1) ))
+          selections.add("3j1bJESDo",  ((njetsJESDo == 3) & (nbtagsJESDo==1) ))
+          selections.add("3j2bJESDo",  ((njetsJESDo == 3) & (nbtagsJESDo>=2) ))
           selections.add("4j1bJESDo",  ((njetsJESDo == 4) & (nbtagsJESDo==1)) )
           selections.add("4j2bJESDo", ((njetsJESDo == 4) & (nbtagsJESDo>=2)) )
           selections.add("g5j1bJESDo", ((njetsJESDo >= 5) & (nbtagsJESDo==1)) )
@@ -536,7 +536,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         # ['A_ht', 'A_sumAllPt', 'A_leta', 'A_j0pt', 'A_mjj', 'A_medianDRjj', 'A_drlb']
         mjjpad = ak.pad_none(mjj_nom, 1)
         drjjpad = ak.pad_none(drjjmedian_nom, 1)
-        #print('model = ', self.model)
         DNNscore_nom , _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lsel0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_nom)])
         DNNscore_fake, _ = EvaluateModelForArrays(self.model, [ht, ptSumVecAll_nom, lfake0.eta, ak.flatten(j0_nom.pt), ak.flatten(mjjpad), ak.flatten(drjjpad), ak.flatten(dRlb_fak)])
         #  DNNscore_nom = np.ones_like(events['event'], dtype=float)
@@ -549,6 +548,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           nbtags_var = nbtags
           ht_var = ht
           DNNscore = DNNscore_nom
+          goodJetsSyst = goodJets
           if syst == 'JESUp':
             j0, drjj, drjjmedian, mjj, ptjj   = GetJetVariables(goodJetsJESUp)
             u0, druu, druumedian, muu, ptuu   = GetJetVariables(goodJetsJESUp[(goodJetsJESUp.isBtag==0)])
@@ -556,6 +556,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             njets_var = njetsJESUp
             nbtags_var = nbtagsJESUp
             ht_var = htJESUp
+            goodJetsSyst = goodJetsJESUp
 
           elif syst == 'JESDo':
             j0, drjj, drjjmedian, mjj, ptjj   = GetJetVariables(goodJetsJESDo)
@@ -564,6 +565,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             njets_var = njetsJESDo
             nbtags_var = nbtagsJESDo
             ht_var = htJESDo
+            goodJetsSyst = goodJetsJESDo
 
           jet0pt  = ak.flatten(j0.pt)
           jet0eta = ak.flatten(j0.eta)
@@ -576,7 +578,7 @@ class AnalysisProcessor(processor.ProcessorABC):
               DNNscore = DNNscore_fake
             for lev in levels:
               #if syst in systJets and lev != 'incl': lev += syst
-              cuts = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] #+ ['metg30']
+              cuts = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] + (['metg30'] if lev in ['2j1b', '3j1b', '3j2b'] else [])
               cutsnoMET = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
               cut = selections.all(*cuts)
               weights = weights_dict[ch if not 'fake' in ch else ch[0]].weight(syst if not syst in (['norm']+systJets) else None)
@@ -597,7 +599,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                hout[f'{lev}_mjj'] = processor.column_accumulator(ak.flatten(mjj[cut]).to_numpy())
                hout[f'{lev}_medianDRjj'] = processor.column_accumulator(ak.flatten(drjjmedian[cut]).to_numpy())
                hout[f'{lev}_minDRjj'] = processor.column_accumulator(ak.flatten(drjj[cut]).to_numpy())
-               hout[f'{lev}_mlb'] = processor.column_accumulator( ak.flatten(GetMlb(l_sel[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1]))) .to_numpy())
+               hout[f'{lev}_mlb'] = processor.column_accumulator( (GetMlb(l_sel[cut], goodJets[cut], int(lev[lev.find('b')-1]))) .to_numpy())
                hout[f'{lev}_mt'] = processor.column_accumulator( ak.flatten(GetMT(l_sel, met)[cut]) .to_numpy())
                hout[f'{lev}_ptsumveclb'] = processor.column_accumulator( ptSumVeclb[cut].to_numpy())
                hout[f'{lev}_drlb'] = processor.column_accumulator( ak.flatten(dRlb[cut]).to_numpy())
@@ -659,12 +661,13 @@ class AnalysisProcessor(processor.ProcessorABC):
 
               if lev == 'incl':
                 hout['njetsnbtags'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags=nbtagnjets[cut], syst=syst, weight=weights)
+                hout['njetsnbtags12'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags=nbtagnjets[cut], syst=syst, weight=weights)
 
               if fillAll:
                 hout['st'].fill(sample=histAxisName, channel=ch, level=lev, st=st[cut], syst=syst, weight=weights)
                 hout['sumallpt'].fill(sample=histAxisName, channel=ch, level=lev, sumallpt=ptSumVecAll[cut], syst=syst, weight=weights)
 
-              if fillDNN and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
+              if fillMVA and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
                 if isData: # compute only after applying cuts
                   htcut = ht[cut]
                   leta = lsel0.eta[cut] if ch in ['e', 'm'] else lfake0.eta[cut]
@@ -691,8 +694,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                   hout['ept' ].fill(sample=histAxisName, channel=ch, level=lev, ept=ept, syst=syst, weight=weights)
                   hout['eeta'].fill(sample=histAxisName, channel=ch, level=lev, eeta=eeta, syst=syst, weight=weights)
                   hout['mt'].fill(sample=histAxisName, channel=ch, level=lev, mt=mt, syst=syst, weight=weights)
-                  if lev in ['0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']:
-                     mlb = (GetMlb(e[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1])) )
+                  if lev in ['3j1b', '3j2b']:
+                     mlb = (GetMlb(e[cut], goodJetsSyst[cut], int(lev[lev.find('b')-1])) )
                      hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
                 elif ch in ['m', 'm_fake']:
                   m = m_sel if ch == 'm' else m_fake
@@ -702,8 +705,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                   hout['mpt'].fill(sample=histAxisName, channel=ch, level=lev, mpt=mpt, syst=syst, weight=weights)
                   hout['meta'].fill(sample=histAxisName, channel=ch, level=lev,meta = meta, syst=syst, weight=weights)
                   hout['mt'].fill(sample=histAxisName, channel=ch, level=lev, mt=mt, syst=syst, weight=weights)
-                  if lev in ['0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']:
-                     mlb = (GetMlb(m[cut], goodJets[cut], nbs=int(lev[lev.find('b')-1])) )
+                  if lev in ['3j1b', '3j2b']:
+                     mlb = (GetMlb(m[cut], goodJetsSyst[cut], int(lev[lev.find('b')-1])) )
                      hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
                 elif ch in ['em', 'ee', 'mm']:
                   llpairs = ak.combinations(l_sel[cut], 2, fields=["l0","l1"])

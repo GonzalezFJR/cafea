@@ -12,6 +12,7 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
     oname = fname[fname.rfind('/')+1:] if '/' in fname else fname
     if oname.endswith('.root'): oname = oname[:-5]
     if '/' in oname: oname[oname.rfind('/')+1:]
+  oname = 'dat_'+oname
   if not oname.endswith('.txt'): oname += '.txt'
   
   lumiUnc = 0.015

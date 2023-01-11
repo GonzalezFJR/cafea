@@ -38,6 +38,7 @@ if __name__ == '__main__':
   parser.add_argument('--jobs', '-j',  action='store_true', help = 'send jobs')
   parser.add_argument('--queue', '-q'  , default='batch', help = 'Queue to send jobs')
   parser.add_argument('--exclude', '-x', default=None, help = 'Exclude nodes')
+  parser.add_argument('--model', '-m', default=None, help = 'Models')
   
   args = parser.parse_args()
   jsonFiles        = args.jsonFiles
@@ -53,6 +54,7 @@ if __name__ == '__main__':
   jobs             = args.jobs
   queue            = args.queue
   exclude          = args.exclude
+  pathModels       = args.model
 
   if dotest:
     nchunks = 2
@@ -153,10 +155,23 @@ if __name__ == '__main__':
     print('pretending...')
     exit() 
 
+  import pickle as pkl
+  model = None
 
-  pathToModel = 'analysis/tt5TeV/nn/models/model_04Jul22_07h04m.pkl'
-  with open(pathToModel, 'rb') as f:
-    model = pickle.load(f)
+  if pathModels is None:
+    #pathModels = 'analysis/tt5TeV/nn/models/model_04Jul22_07h04m.pkl'
+    #model1 = '/nfs/fanae/user/andreatf/cafea/cafea/analysis/tt5TeV/models/november/rf3j1b_200_4_allvariablesNewMlb_p2v2.pkl'
+    #model1 = '/mnt_pool/c3_users/user/andreatf/cafea/cafea/analysis/tt5TeV/models/january/rf3j1b_5000_6_allvariablesNewMlb.pkl'
+    model1 = '/mnt_pool/c3_users/user/andreatf/cafea/cafea/analysis/tt5TeV/models/january/3j1b_500_6_minusvariablesNewMlb.pkl'
+    model2 = '/nfs/fanae/user/andreatf/cafea/cafea/analysis/tt5TeV/models/november/rf3j2b_250_4_allvariablesNewMlb_p2v2.pkl'
+    pathModels = [model1, model2]
+  if pathModels is not None and isinstance(pathModels, str) and not ',' in pathModels:
+    with open(pathModels, 'rb') as f:
+      model = pickle.load(f)
+  elif pathModels is not None and isinstance(pathModels, str):
+    pathModels = pathModels.replace(' ', '').split(',')
+  if isinstance(pathModels, list):
+    model = [pkl.load(open(p, 'rb')) for p in pathModels]
   processor_instance = tt5TeV.AnalysisProcessor(samplesdict, model)
 
   # Run the processor and get the output

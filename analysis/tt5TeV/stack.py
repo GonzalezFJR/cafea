@@ -41,7 +41,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   elif var in ['sumallpt']:
     b0 = 0; bN = 200
     xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
-  elif var in ['DNNscore','met','u0pt', 'ptuu', 'ptjj']:
+  elif var in ['MVAscore','met','u0pt', 'ptuu', 'ptjj']:
     b0 = 2;
   elif var in ['ht']:
     b0 = 4;

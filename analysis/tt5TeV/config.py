@@ -110,6 +110,8 @@ def RebinVar(p, var):
     b0 = 0.4; bN = 2.0
   elif var =='medianDRjj':
     b0 = 1.0; bN = 3.5
+  elif var =='MVAscore':
+    b0 = 0.05; bN = 0.8
   if b0 is not None:
     p.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
 

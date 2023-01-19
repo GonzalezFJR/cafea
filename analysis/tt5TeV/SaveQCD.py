@@ -94,6 +94,7 @@ def GetQCDnorm(chan, level, sys=0):
   return fact
 
 def NormQCD(hqcd, chan, level):
+  ''' Normalize QCD '''
   fact   = GetQCDnorm(chan, level)
   factUp = GetQCDnorm(chan, level, sys=1)
   factDo = GetQCDnorm(chan, level, sys=-1)
@@ -113,6 +114,7 @@ def NormQCD(hqcd, chan, level):
   return hqcd
 
 def GetQCD(qcdHist, level, chan):
+  ''' Apply QCD normalization safely '''
   hqcd = qcdHist.copy()
   #hqcd = h.group('level', hist.Cat("level", "level"), {level:level}).group('channel', hist.Cat("channel", "channel"), {chan:chan})
   GroupKeepOrder(hqcd, [['level', 'level', {level:level}], ['channel', 'channel', {chan:chan}] ])
@@ -120,9 +122,10 @@ def GetQCD(qcdHist, level, chan):
   return hqcd
 
 def GetQCDpar(inputs):
+  ''' To be used with multiprocessing '''
   qcdHist, var, level, chan, outdict = inputs
   h = GetQCD(qcdHist, level, chan)
-  GroupKeepOrder(h, [['process', 'sample', {'QCD':'QCD'}]])
+  h = GroupKeepOrder(h, [['process', 'sample', {'QCD':'QCD'}]])
   if var not in outdict: outdict[var] = h
   else: outdict[var] += h
   outdict['progress'] += 1
@@ -145,6 +148,7 @@ for var in variables:
   # Normalize back to 1/pb
   QCDhistos[var].scale(1./lumi)
   ivar += 1
+print("\r[{:<50}] {:.2f} %".format('#' * int(progress100/2), progress100))
 
 print('Grouping and normalizing...')
 from multiprocessing import Pool, Manager

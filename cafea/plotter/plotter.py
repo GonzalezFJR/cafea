@@ -41,7 +41,11 @@ def loadHistos(path, hname=None):
         if k in hists: hists[k]+=hin[k]
         else:          hists[k]=hin[k]
   if hname is None: return hists
-  return histis[hname]
+  return hists[hname]
+
+def saveHistos(path, fname, hists):
+  with gzip.open(os.path.join(path, fname+'.pkl.gz'), 'wb') as f:
+    pickle.dump(hists, f)
 
 def GetHisto(path, hname=None, categories={}, group=None, integrate=None, rebin=None):
   ''' Get a histogram from a pkl file (standard output from coffea analysis) '''
@@ -83,7 +87,7 @@ def CheckHistoCategories(hist, categories, checkValues=False):
     if values == {}: return False
   return True
 
-def Rebin(h, axname, newbins, binN=None, includeLower=True, includeUpper=True):
+def Rebin(h, axname, newbins, binN=None, includeLower=True, includeUpper=True, binRebin=None):
   oldax = h.axis(axname)
   if binN is not None:
     oldbins = oldax.edges()
@@ -95,13 +99,19 @@ def Rebin(h, axname, newbins, binN=None, includeLower=True, includeUpper=True):
       indices = np.append(indices, indices[-1]+1)
     newbins = oldbins[indices]
     newax = hist.Bin(axname, oldax.label, newbins)
+    if binRebin is not None:
+      return Rebin(h.rebin(oldax, newax), axname, binRebin, None, includeLower, includeUpper, None)
 
-  elif isinstance(newbins, int): # take n first bins...
+
+  elif isinstance(newbins, int): 
     newedges = oldax.edges()[0::newbins]
     newax = hist.Bin(axname, oldax.label, newedges)
 
   else: # Give a new array with bins
+    #print('Rebining to: ', newbins)
     newax = hist.Bin(axname, oldax.label, newbins)
+    print('old axis = ', oldax.edges())
+    print('new axis = ', newax.edges())
 
   return h.rebin(oldax, newax) 
 
@@ -600,7 +610,7 @@ class plotter:
     self.SetRebin()
     self.SetNormUncDict()
     
-  def SetRebin(self, var=None, rebin=None, bN=None, includeLower=True, includeUpper=True):
+  def SetRebin(self, var=None, rebin=None, bN=None, includeLower=True, includeUpper=True, binRebin=None):
     self.rebin = rebin
     if var is None or rebin is None: return
     if bN is None:
@@ -609,7 +619,7 @@ class plotter:
       b0 = rebin;
       histo = self.hists[var]
       axname = [x.name for x in histo.dense_axes()]
-      self.hists[var] = Rebin(self.hists[var], var, b0, bN, includeLower, includeUpper)
+      self.hists[var] = Rebin(self.hists[var], var, b0, bN, includeLower, includeUpper, binRebin)
 
   def SetVerbose(verbose=1):
     ''' Set level of verbosity '''
@@ -646,7 +656,10 @@ class plotter:
             continue
           if self.var is not None and k not in self.var: continue
           if not k in self.listOfVars: self.listOfVars.append(k)
-          if k in self.hists: self.hists[k]+=hin[k]
+          if k in self.hists: 
+            #PrintHisto(self.hists[k])
+            #PrintHisto(hin[k])
+            self.hists[k]+=hin[k]
           else:               self.hists[k]=hin[k]
     self.GroupProcesses()
     if self.verbose >= 3: print(self.hists)
@@ -811,7 +824,7 @@ class plotter:
     else:
       self.multicategories = multidic
 
-  def GetHistogram(self, hname, process=None, categories=None, removeProcessAxis=True):
+  def GetHistogram(self, hname, process=None, categories=None, removeProcessAxis=True, keepCats=False):
     ''' Returns a histogram with all categories contracted '''
     if categories == None: categories = self.categories
     h = (self.hists[hname].copy())
@@ -823,11 +836,22 @@ class plotter:
     elif isinstance(process, str): 
       h = h[process]#.sum("process")
       if removeProcessAxis: h = h.sum("process")
-    for cat in categories: 
-      h = h.integrate(cat, categories[cat])
-    #self.SetRebin(rebin)
-    #if self.rebin is not None:
-    #  h = Rebin(h, hname, self.rebin)
+    if keepCats:
+      listOfCatDicts = []
+      for cat in categories: 
+        catname = categories[cat]
+        diccatname = {}
+        if isinstance(catname, list): 
+          for i in range(len(catname)): 
+            diccatname[catname[i]] = catname[i]
+        else:
+          diccatname = {catname:catname}
+        listOfCatDicts.append([cat, cat, diccatname])
+        #h = h.group(cat, hist.Cat(cat, cat), diccatname)
+      GroupKeepOrder(h, listOfCatDicts)
+    else:
+      for cat in categories: 
+        h = h.integrate(cat, categories[cat])
     return h
 
   def SetSystematics(self, syst=None):

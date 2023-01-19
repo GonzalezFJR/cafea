@@ -8,6 +8,12 @@
 from analysis.tt5TeV.config import *
 import time
 
+if os.path.exists(path + 'QCD.pkl.gz'):
+  print('WARNING: QCD file already exists in path... moving to ', path + 'old/QCD.pkl.gz.old')
+  if not os.path.exists(path + 'old/'):
+    os.makedirs(path + 'old/')
+  os.rename(path + 'QCD.pkl.gz', path + 'old/QCD.pkl.gz.old')
+
 print('Loading files from ', path, '... (this may take a while)') 
 plt = plotter(path, prDic=processDic_noQCD,  bkgList=bkglist_noQCD, lumi=lumi)
 
@@ -15,9 +21,10 @@ plt = plotter(path, prDic=processDic_noQCD,  bkgList=bkglist_noQCD, lumi=lumi)
 varlist = plt.GetListOfVars()
 variables = []
 print('Getting list of variables for which QCD can be estimated...')
+print("  -- skipping variables: ", var, end='')
 for var in varlist:
   if not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'e_fake', 'process':['data']+bkglist_noQCD}, checkValues=True) or not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'm_fake', 'process':['data']+bkglist_noQCD}, checkValues=True):
-    print("  -- skipping var: ", var)
+    print(', ', var, end='')
     continue
   variables.append(var)
 
@@ -38,8 +45,10 @@ print('--------------------------------------------------')
 def GetQCDforVar(var):
   ''' Compute (data - MC) for a given variable (dense_axis) -- all channels and levels!! '''
   catfake = {'channel' : ['e_fake', 'm_fake']}
-  h_data_fake = plt.GetHistogram(var, ['data']     , catfake, keepCats=True).group('channel', hist.Cat("channel", "channel"), {'e_fake':'e', 'm_fake':'m'}).group('process', hist.Cat("process", "process"), {'QCD':'data'} )
-  h_mc_fake   = plt.GetHistogram(var, bkglist_noQCD, catfake, keepCats=True).group('channel', hist.Cat("channel", "channel"), {'e_fake':'e', 'm_fake':'m'}).group('process', hist.Cat("process", "process"), {'QCD':bkglist_noQCD})
+  h_data_fake = plt.GetHistogram(var, ['data']     , catfake, keepCats=True)#.group('channel', hist.Cat("channel", "channel"), {'e_fake':'e', 'm_fake':'m'}).group('process', hist.Cat("process", "process"), {'QCD':'data'} )
+  h_mc_fake   = plt.GetHistogram(var, bkglist_noQCD, catfake, keepCats=True)#.group('channel', hist.Cat("channel", "channel"), {'e_fake':'e', 'm_fake':'m'}).group('process', hist.Cat("process", "process"), {'QCD':bkglist_noQCD})
+  h_data_fake = GroupKeepOrder(h_data_fake, [['channel', 'channel', {'e':'e_fake', 'm':'m_fake'}], ['process', 'process', {'QCD':'data'       }]])
+  h_mc_fake   = GroupKeepOrder(h_mc_fake  , [['channel', 'channel', {'e':'e_fake', 'm':'m_fake'}], ['process', 'process', {'QCD':bkglist_noQCD}]])
   h_mc_fake.scale(-1*lumi)
   FillDataSystCategories(h_data_fake, var)
   htot = (h_data_fake + h_mc_fake)
@@ -56,13 +65,17 @@ def FillDataSystCategories(hdata, var):
   hnorm = hdata.copy()
   if CheckHistoCategories(hnorm, {'syst':'norm'}):
     hnorm = hnorm.integrate('syst', 'norm')
+  if CheckHistoCategories(hnorm, {'process':'QCD'}):
+    hnorm = hnorm.integrate('process', 'QCD')
+  elif CheckHistoCategories(hnorm, {'process':'data'}):
+    hnorm = hnorm.integrate('process', 'data')
   for l in levels:
     for c in channels:
       hnorm2 = hnorm.integrate('level', l).integrate('channel', c)
       if hnorm2.values() == {}: continue
+      bins, vals = GetXYfromH1D(hnorm2, axis=var, mode='centers', errors=False, overflow=False)
       for s in systematics:
         if s == 'norm': continue
-        bins, vals = GetXYfromH1D(hnorm2, axis=var, mode='centers', errors=False, overflow=False)
         hdata.fill(**{'syst':s, 'weight':vals, 'process':'QCD', 'channel':c, 'level':l, var:bins})
 
 def GetQCDnorm(chan, level, sys=0):
@@ -83,28 +96,31 @@ def NormQCD(hqcd, chan, level):
   factUp = GetQCDnorm(chan, level, sys=1)
   factDo = GetQCDnorm(chan, level, sys=-1)
   cat = {'channel':chan, 'level':level}
-  for c in cat:
-    hqcd = hqcd.integrate(c, cat[c])
+  #for c in cat:
+  #  hqcd = hqcd.integrate(c, cat[c])
+  GroupKeepOrder(hqcd, [['channel', 'channel', {cat['channel']:cat['channel']}], ['level', 'level', {cat['level']:cat['level']}]])
   hqcdUp = hqcd.copy()
   hqcdDo = hqcd.copy()
   hqcd  .scale(fact)
   hqcdUp.scale(factUp)
   hqcdDo.scale(factDo)
-  hqcdUp = GroupKeepOrder(hqcdUp, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
-  hqcdDo = GroupKeepOrder(hqcdDo, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+  GroupKeepOrder(hqcdUp, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+  GroupKeepOrder(hqcdDo, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
   hqcd += hqcdUp
   hqcd += hqcdDo
   return hqcd
 
 def GetQCD(qcdHist, level, chan):
-  h = qcdHist.copy()
-  hqcd = h.group('level', hist.Cat("level", "level"), {level:level}).group('channel', hist.Cat("channel", "channel"), {chan:chan})
+  hqcd = qcdHist.copy()
+  #hqcd = h.group('level', hist.Cat("level", "level"), {level:level}).group('channel', hist.Cat("channel", "channel"), {chan:chan})
+  GroupKeepOrder(hqcd, [['level', 'level', {level:level}], ['channel', 'channel', {chan:chan}] ])
   hqcd = NormQCD(hqcd, chan, level)
   return hqcd
 
 def GetQCDpar(inputs):
   qcdHist, var, level, chan, outdict = inputs
   h = GetQCD(qcdHist, level, chan)
+  GroupKeepOrder(h, [['process', 'sample', {'QCD':'QCD'}]])
   if var not in outdict: outdict[var] = h
   else: outdict[var] += h
   outdict['progress'] += 1
@@ -122,7 +138,7 @@ print('Calculating distributions...')
 ivar = 0; 
 for var in variables:
   progress100 = (ivar / len(variables)) * 100
-  print("\r[{:<50}] {:.2f} %".format('#' * int(progress100/2), progress100))
+  print("\r[{:<50}] {:.2f} %".format('#' * int(progress100/2), progress100), end='')
   QCDhistos[var] = GetQCDforVar(var)
   # Normalize back to 1/pb
   QCDhistos[var].scale(1./lumi)

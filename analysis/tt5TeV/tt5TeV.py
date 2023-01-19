@@ -89,7 +89,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         'njets'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njets",   "Jet multiplicity", 10, 0, 10)),
         'nbtags'     : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("nbtags",  "b-tag multiplicity", 4, 0, 4)),
         'met'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 40, 0, 200)),
-        'metnocut'   : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("met",     "MET (GeV)", 40, 0, 200)),
+        'metnocut'   : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("metnocut",     "MET (GeV)", 40, 0, 200)),
         'ht'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ht",      "H$_{T}$ (GeV)", 25, 0, 500)),
         'mt'         : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mt",      "m$_{T}$ (GeV)", 10, 0, 150)),
         'mlb'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mlb",     "m(l,b) (GeV)", 12, 0, 400)),
@@ -98,7 +98,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         'mjj'        : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("mjj",     "m(jj)( (GeV)", 10, 0, 200)),
         'ptjj'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("ptjj",    "p$_{T}$(jj) (GeV)", 15, 0, 300)),
         'njetsnbtags': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njetsnbtags","(j,b)", 16, 0, 16)),
-        'njetsnbtags12': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njetsnbtags","(j,b)", 12, 0, 12)),
+        'njetsnbtags12': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("njetsnbtags12","(j,b)", 12, 4, 16)),
   
         'u0pt'       : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("u0pt",  "Leading u-jet $p_{T}$ (GeV)", 10, 0, 300)),
         'u0eta'      : hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("u0eta", "Leading u-jet $\eta$ ", 12, -2.5, 2.50)),
@@ -120,8 +120,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         'counts_metl15': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
         'counts_metg30': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
         'counts_metl30': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
-        'counts_metg40': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
-        'counts_metl40': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
+        'counts_metg25': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
+        'counts_metl25': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
 
         # processor.column_accumulator
         # Regions: 
@@ -302,6 +302,8 @@ class AnalysisProcessor(processor.ProcessorABC):
           cleanedJets_JESDown = corrected_jets.JES_jes.down
           jetptname = "pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
           met = met_factory.build(events.MET, corrected_jets, events_cache)
+          met_JESUp = met.JES_jes.up
+          met_JESDo = met.JES_jes.down
         else:
           cleanedJets["pt_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.pt
           cleanedJets["mass_raw"] = (1 - cleanedJets.rawFactor)*cleanedJets.mass
@@ -311,7 +313,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           cleanedJets = corrected_jets
           jetptname = "pt"#"pt_nom" if hasattr(cleanedJets, "pt_nom") else "pt"
           met = met_factory.build(events.MET, corrected_jets, events_cache)
-        
+
         ################################ All this depends on jet pt
         jetptcut = 25
         cleanedJets["isGood"] = isTightJet(getattr(cleanedJets, jetptname), cleanedJets.eta, cleanedJets.jetId, jetPtCut=jetptcut)
@@ -455,16 +457,28 @@ class AnalysisProcessor(processor.ProcessorABC):
         selections.add("m", ( (events.ism)&(trigm)))
         selections.add("e_fake", ( (events.ise_fake)&(trige)))
         selections.add("m_fake", ( (events.ism_fake)&(trigm)))
+
         selections.add("metg20", (met.pt>=20))
         selections.add("metl20", (met.pt<20))
+        if not isData: # JES systematics
+          selections.add("metg20JESUp", (met_JESUp.pt>=20))
+          selections.add("metg20JESDo", (met_JESDo.pt>=20))
+          selections.add("metl20JESUp", (met_JESUp.pt<20))
+          selections.add("metl20JESDo", (met_JESDo.pt<20))
+
         selections.add("metg15", (met.pt>=15))
         selections.add("metl15", (met.pt<15))
+        selections.add("metg25", (met.pt>=25))
+        selections.add("metl25", (met.pt<25))
+
         selections.add("metg30", (met.pt>=30))
         selections.add("metl30", (met.pt<30))
-        selections.add("metg40", (met.pt>=40))
-        selections.add("metl40", (met.pt<40))
+        if not isData: # JES systematics
+          selections.add("metg30JESUp", (met_JESUp.pt>=30))
+          selections.add("metg30JESDo", (met_JESDo.pt>=30))
+
         selections.add("incl", ak.ones_like(met.pt, dtype=bool))
- 
+
         # Counts
         counts = np.ones_like(events['event'], dtype=float)
  
@@ -556,6 +570,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           njets_var = njets
           nbtags_var = nbtags
           ht_var = ht
+          met_pt = met.pt
           if  self.model_3j1b is None and self.model is not None: 
             DNNscore = DNNscore_nom
           goodJetsSyst = goodJets
@@ -567,6 +582,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             nbtags_var = nbtagsJESUp
             ht_var = htJESUp
             goodJetsSyst = goodJetsJESUp
+            met_pt = met_JESUp.pt
 
           elif syst == 'JESDo':
             j0, drjj, drjjmedian, mjj, ptjj   = GetJetVariables(goodJetsJESDo)
@@ -576,6 +592,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             nbtags_var = nbtagsJESDo
             ht_var = htJESDo
             goodJetsSyst = goodJetsJESDo
+            met_pt = met_JESDo.pt
 
           jet0pt  = ak.flatten(j0.pt)
           jet0eta = ak.flatten(j0.eta)
@@ -589,7 +606,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 DNNscore = DNNscore_fake
             for lev in levels:
               #if syst in systJets and lev != 'incl': lev += syst
-              cuts      = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] + (['metg30'] if lev in ['2j1b', '3j1b', '3j2b'] else [])
+              cuts      = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] + (['metg30'+(syst if syst in systJets else '')] if lev in ['2j1b', '3j1b', '3j2b'] else [])
               cutsnoMET = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
               cut = selections.all(*cuts)
               cutnomet = selections.all(*cutsnoMET)
@@ -622,30 +639,24 @@ class AnalysisProcessor(processor.ProcessorABC):
                  hout[f'{lev}_ptuu'] = processor.column_accumulator( ak.flatten(ptuu[cut]).to_numpy())
 
               # Fill met norm histos
-              cuts_metg20 = cutsnoMET+['metg20']; cuts_metl20 = cutsnoMET+['metl20']
+              cuts_metg20 = cutsnoMET+['metg20'+(syst if syst in systJets else '')]; cuts_metl20 = cutsnoMET+['metl20'+(syst if syst in systJets else '')]
               cuts_metg15 = cutsnoMET+['metg15']; cuts_metl15 = cutsnoMET+['metl15']
-              cuts_metg30 = cutsnoMET+['metg30']; cuts_metl30 = cutsnoMET+['metl30']
-              cuts_metg40 = cutsnoMET+['metg40']; cuts_metl40 = cutsnoMET+['metl40']
+              cuts_metg25 = cutsnoMET+['metg25']; cuts_metl25 = cutsnoMET+['metl25']
               cut_metg20 = selections.all(*cuts_metg20); cut_metl20 = selections.all(*cuts_metl20)
               cut_metg15 = selections.all(*cuts_metg15); cut_metl15 = selections.all(*cuts_metl15)
-              cut_metg30 = selections.all(*cuts_metg30); cut_metl30 = selections.all(*cuts_metl30)
-              cut_metg40 = selections.all(*cuts_metg40); cut_metl40 = selections.all(*cuts_metl40)
+              cut_metg25 = selections.all(*cuts_metg25); cut_metl25 = selections.all(*cuts_metl25)
               weights_metg20 = weights[cut_metg20]; weights_metl20 = weights[cut_metl20]
               weights_metg15 = weights[cut_metg15]; weights_metl15 = weights[cut_metl15]
-              weights_metg30 = weights[cut_metg30]; weights_metl30 = weights[cut_metl30]
-              weights_metg40 = weights[cut_metg40]; weights_metl40 = weights[cut_metl40]
+              weights_metg25 = weights[cut_metg25]; weights_metl25 = weights[cut_metl25]
               hout['counts_metg20'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg20], syst=syst, weight=weights_metg20)
               hout['counts_metl20'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl20], syst=syst, weight=weights_metl20)
               hout['counts_metg15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg15], syst=syst, weight=weights_metg15)
               hout['counts_metl15'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl15], syst=syst, weight=weights_metl15)
-              hout['counts_metg30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg30], syst=syst, weight=weights_metg30)
-              hout['counts_metl30'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl30], syst=syst, weight=weights_metl30)
-              hout['counts_metg40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg40], syst=syst, weight=weights_metg40)
-              hout['counts_metl40'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl40], syst=syst, weight=weights_metl40)
+              hout['counts_metg25'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metg25], syst=syst, weight=weights_metg25)
+              hout['counts_metl25'].fill(sample=histAxisName, channel=ch, level=lev, counts=counts[cut_metl25], syst=syst, weight=weights_metl25)
 
               ### met dist with no cut
-              weightsnomet = weights[cutnomet]
-              hout['metnocut'].fill(sample=histAxisName, channel=ch, level=lev, met=met.pt[cutnomet], syst=syst, weight=weightsnomet)
+              hout['metnocut'].fill(sample=histAxisName, channel=ch, level=lev, metnocut=met.pt[cutnomet], syst=syst, weight=weights[cutnomet])
   
               ### We need to have 2 jets in order to calculate dijet observables
               dijet_cuts = cuts + ['g2jets'  + (syst if syst in systJets else '')]
@@ -687,7 +698,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
               if lev == 'incl':
                 hout['njetsnbtags'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags=nbtagnjets[cut], syst=syst, weight=weights)
-                hout['njetsnbtags12'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags=nbtagnjets[cut], syst=syst, weight=weights)
+                hout['njetsnbtags12'].fill(sample=histAxisName, channel=ch, level=lev, njetsnbtags12=nbtagnjets[cut], syst=syst, weight=weights)
 
               if fillAll:
                 fst = st[cut]
@@ -695,7 +706,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 hout['st'].fill(sample=histAxisName, channel=ch, level=lev, st=fst, syst=syst, weight=weights)
                 hout['sumallpt'].fill(sample=histAxisName, channel=ch, level=lev, sumallpt=fptSumVecAll, syst=syst, weight=weights)
 
-              if fillMVA and self.model is not None and self.model_3j1b is None and self.model_3j2b is None and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
+              if fillMVA and self.model is not None and self.model_3j1b is None and ch in ['e', 'm', 'e_fake', 'm_fake'] and lev in ['2j1b', '3j1b', '3j2b']:
                 if isData: # compute only after applying cuts
                   htcut = ht[cut]
                   leta = lsel0.eta[cut] if ch in ['e', 'm'] else lfake0.eta[cut]
@@ -748,7 +759,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                   hout['mpt'].fill(sample=histAxisName, channel=ch, level=lev, mpt=lpt, syst=syst, weight=weights)
                   hout['meta'].fill(sample=histAxisName, channel=ch, level=lev,meta = leta, syst=syst, weight=weights)
                   hout['mt'].fill(sample=histAxisName, channel=ch, level=lev, mt=mt, syst=syst, weight=weights)
-                  if lev in ['3j1b', '3j2b']:
+                  if lev in ['3j1b']:#, '3j2b']:
                      mlb = (GetMlb(m[cut], goodJetsSyst[cut], int(lev[lev.find('b')-1])) )
                      hout['mlb'].fill(sample=histAxisName, channel=ch, level=lev, mlb=mlb, syst=syst, weight=weights)
                      # Fill MVA variables
@@ -758,10 +769,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                        MVAscore_nom_3j1b = self.model_3j1b.predict_proba(np.column_stack(vars3j1b))[:,1]
                        hout['MVAscore'].fill(sample=histAxisName, channel=ch, level=lev, MVAscore=MVAscore_nom_3j1b, syst=syst, weight=weights)
 
-                     elif fillMVA and lev == '3j2b' and self.model_3j2b is not None and len(fht) > 0:
-                       vars3j2b = [fht, fst, fptSumVecAll, fj0pt, fj0eta, fptjj, fmjj, fdrjjmed, fdrjjmin, mlb, fptlb, fdRlb]
-                       MVAscore_nom_3j2b = self.model_3j2b.predict_proba(np.column_stack(vars3j2b))[:,1]
-                       hout['MVAscore'].fill(sample=histAxisName, channel=ch, level=lev, MVAscore=MVAscore_nom_3j2b, syst=syst, weight=weights)
+                     #elif fillMVA and lev == '3j2b' and self.model_3j2b is not None and len(fht) > 0:
+                     #  vars3j2b = [fht, fst, fptSumVecAll, fj0pt, fj0eta, fptjj, fmjj, fdrjjmed, fdrjjmin, mlb, fptlb, fdRlb]
+                     #  MVAscore_nom_3j2b = self.model_3j2b.predict_proba(np.column_stack(vars3j2b))[:,1]
+                     #  hout['MVAscore'].fill(sample=histAxisName, channel=ch, level=lev, MVAscore=MVAscore_nom_3j2b, syst=syst, weight=weights)
 
 
                 elif ch in ['em', 'ee', 'mm']:

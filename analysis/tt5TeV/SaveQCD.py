@@ -27,6 +27,7 @@ for var in varlist:
     print(', ', var, end='')
     continue
   variables.append(var)
+print('')
 
 # Channels and levels
 print('Getting levels and systematics...')
@@ -50,7 +51,7 @@ def GetQCDforVar(var):
   h_data_fake = GroupKeepOrder(h_data_fake, [['channel', 'channel', {'e':'e_fake', 'm':'m_fake'}], ['process', 'process', {'QCD':'data'       }]])
   h_mc_fake   = GroupKeepOrder(h_mc_fake  , [['channel', 'channel', {'e':'e_fake', 'm':'m_fake'}], ['process', 'process', {'QCD':bkglist_noQCD}]])
   h_mc_fake.scale(-1*lumi)
-  FillDataSystCategories(h_data_fake, var)
+  FillDataSystCategories(h_data_fake)#, var=var)
   htot = (h_data_fake + h_mc_fake)
   return htot
 
@@ -60,8 +61,9 @@ def GroupCats(h, catdic):
     h = h.group(cat, hist.Cat(cat, cat), {catdic[cat]:catdic[cat]})
   return h
 
-def FillDataSystCategories(hdata, var):
+def FillDataSystCategories(hdata, var=None):
   ''' Fill systematics for fake data distribution (using nominal) '''
+  if var is None: var = hdata.dense_axes()[0].name
   hnorm = hdata.copy()
   if CheckHistoCategories(hnorm, {'syst':'norm'}):
     hnorm = hnorm.integrate('syst', 'norm')

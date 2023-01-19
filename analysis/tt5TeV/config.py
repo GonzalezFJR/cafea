@@ -25,6 +25,7 @@ parser.add_argument('--output',   default = None                     , help = 'N
 parser.add_argument('--outpath',  '-o', default = None                     , help = 'Name of the output path')
 parser.add_argument('--data',     '-d', action= 'store_true'             , help = 'Do data?')
 parser.add_argument('--syst',     '-s', default= None             , help = 'Systematic choice')
+parser.add_argument('--nSlots',   '-n', default= 4             , help = 'Number of slots for parallelization')
 args = parser.parse_args()
 
 path  = args.path
@@ -35,6 +36,7 @@ output = args.output
 doData = args.data
 outpatho = args.outpath
 systch = args.syst
+nSlots = int(args.nSlots)
 if outpatho is None: outpatho = 'temp/'
 if not outpatho.endswith('/'): outpatho += '/'
 #syst = 'norm'
@@ -52,12 +54,17 @@ processDic = {
   'tt': 'ttPS',#, ttPS',
   'tW': 'tbarW, tW',
   'WJets': 'WJetsToLNu',#  'W0JetsToLNu, W1JetsToLNu, W2JetsToLNu, W3JetsToLNu',
+  'QCD': 'QCD',
   'DY': 'DYJetsToLLMLL50, DYJetsToLLM10to50',
   'data' : 'SingleMuon, HighEGJet',
 }
 
-bkglist    = ['tt', 'tW', 'WJets', 'DY']
-bkgnormunc = [0.05, 0.2, 0.2, 0.2]
+processDic_noQCD = processDic.copy()
+processDic_noQCD.pop('QCD')
+
+bkglist    = ['tt', 'tW', 'WJets', 'DY', 'QCD']
+bkglist_noQCD = ['tt', 'tW', 'WJets', 'DY']
+bkgnormunc = [0.05, 0.2, 0.2, 0.2, 0.2]
 
 colordic ={
   'tt' : '#cc0000',
@@ -104,14 +111,32 @@ def GetModSystHistos(path, fname, systname, var=None):
   return up, do
 
 
-def RebinVar(p, var):
-  b0 = None; bN = None
-  if var == 'minDRjj':
+  #elif var in ['ht']:
+  #  b0 = 2
+
+def RebinVar(p, var, level=None):
+  b0 = None; bN = None; binRebin=None
+  xtit = None
+  if var in ['minDRjj', 'minDRuu']:
     b0 = 0.4; bN = 2.0
   elif var =='medianDRjj':
     b0 = 1.0; bN = 3.5
   elif var =='MVAscore':
-    b0 = 0.05; bN = 0.8
+    b0 = 0.10; bN = 0.8; binRebin=2
+  elif var == "njets" and 'level' != 'incl':
+    b0 = 4; bN = 10
+  elif var in ['st']:
+    b0 = 120; bN = 600;
+  elif var in ['sumallpt']:
+    b0 = 0; bN = 200
+    xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
+  elif var in ['met','u0pt', 'ptuu', 'ptjj', 'metnocut']:
+    b0 = 2;
+  elif var in ['MVAscore']:
+    b0 = 0.1; bN = 0.8
+    binRebin = 2
+  elif var in ['ht']:
+    b0 = 4;
   if b0 is not None:
-    p.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
-
+    p.SetRebin(var, b0, bN, includeLower=True, includeUpper=True, binRebin=binRebin)
+  return xtit

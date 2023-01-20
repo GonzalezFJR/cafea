@@ -123,6 +123,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         'counts_metg25': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
         'counts_metl25': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Cat('syst', 'syst'), hist.Bin("counts",  "Counts", 1, 0, 10)),
 
+        'pttrig': hist.Hist("Events", hist.Cat("sample", "sample"), hist.Cat("channel", "channel"), hist.Cat("level", "level"), hist.Bin("pttrig",  "Lepton p_T", 20, 0, 100)),
+
         # processor.column_accumulator
         # Regions: 
         #  A: 2j1b, 3j1b, 3j2b,   
@@ -486,6 +488,17 @@ class AnalysisProcessor(processor.ProcessorABC):
         hout = self.accumulator.identity()
         channels =['em', 'e', 'm', 'ee', 'mm', 'e_fake', 'm_fake'] 
         levels = ['incl', 'g1jet', 'g2jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']
+
+
+        # For trigger
+        e0pt      = ak.flatten(e0[ak.num(e_sel)>=1].pt)
+        e0pt_pass = ak.flatten(e0[(ak.num(e_sel)>=1)&(trige)].pt)
+        m0pt     = ak.flatten(m0[ak.num(m_sel)>=1].pt)
+        m0pt_pass = ak.flatten(m0[(ak.num(m_sel)>=1)&(trigm)].pt)
+        hout['pttrig'].fill(sample=histAxisName, channel='e', level='den', pttrig=e0pt, weight=np.ones_like(e0pt))
+        hout['pttrig'].fill(sample=histAxisName, channel='e', level='num', pttrig=e0pt_pass, weight=np.ones_like(e0pt_pass))
+        hout['pttrig'].fill(sample=histAxisName, channel='m', level='den', pttrig=m0pt, weight=np.ones_like(m0pt))
+        hout['pttrig'].fill(sample=histAxisName, channel='m', level='num', pttrig=m0pt_pass, weight=np.ones_like(m0pt_pass))
 
         # Count jets
         njets = ak.num(goodJets)

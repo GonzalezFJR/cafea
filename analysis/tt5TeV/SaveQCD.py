@@ -23,7 +23,7 @@ variables = []
 print('Getting list of variables for which QCD can be estimated...')
 print("  -- skipping variables: ", var, end='')
 for var in varlist:
-  if not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'e_fake', 'process':['data']+bkglist_noQCD}, checkValues=True) or not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'm_fake', 'process':['data']+bkglist_noQCD}, checkValues=True):
+  if not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'e_fake', 'process':['data']+bkglist_noQCD}, checkValues=True) and not CheckHistoCategories(plt.GetHistogram(var), {'channel' : 'm_fake', 'process':['data']+bkglist_noQCD}, checkValues=True):
     print(', ', var, end='')
     continue
   variables.append(var)
@@ -101,30 +101,30 @@ def NormQCD(hqcd, chan, level):
   cat = {'channel':chan, 'level':level}
   #for c in cat:
   #  hqcd = hqcd.integrate(c, cat[c])
-  GroupKeepOrder(hqcd, [['channel', 'channel', {cat['channel']:cat['channel']}], ['level', 'level', {cat['level']:cat['level']}]])
+  hqcd = GroupKeepOrder(hqcd, [['channel', 'channel', {cat['channel']:cat['channel']}], ['level', 'level', {cat['level']:cat['level']}]])
   hqcdUp = hqcd.copy()
   hqcdDo = hqcd.copy()
   hqcd  .scale(fact)
   hqcdUp.scale(factUp)
   hqcdDo.scale(factDo)
-  GroupKeepOrder(hqcdUp, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
-  GroupKeepOrder(hqcdDo, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+  hqcdUp = GroupKeepOrder(hqcdUp, [['syst', 'syst', {'QCDUp':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
+  hqcdDo = GroupKeepOrder(hqcdDo, [['syst', 'syst', {'QCDDown':'norm'}], ['process', 'process', {'QCD':'QCD'}]])
   hqcd += hqcdUp
   hqcd += hqcdDo
   return hqcd
 
-def GetQCD(qcdHist, level, chan):
-  ''' Apply QCD normalization safely '''
-  hqcd = qcdHist.copy()
-  #hqcd = h.group('level', hist.Cat("level", "level"), {level:level}).group('channel', hist.Cat("channel", "channel"), {chan:chan})
-  GroupKeepOrder(hqcd, [['level', 'level', {level:level}], ['channel', 'channel', {chan:chan}] ])
-  hqcd = NormQCD(hqcd, chan, level)
-  return hqcd
+#def GetQCD(qcdHist, level, chan):
+#  ''' Apply QCD normalization safely '''
+#  hqcd = qcdHist.copy()
+#  #hqcd = h.group('level', hist.Cat("level", "level"), {level:level}).group('channel', hist.Cat("channel", "channel"), {chan:chan})
+  #GroupKeepOrder(hqcd, [['level', 'level', {level:level}], ['channel', 'channel', {chan:chan}] ])
+#  hqcd = NormQCD(hqcd, chan, level)
+#  return hqcd
 
 def GetQCDpar(inputs):
   ''' To be used with multiprocessing '''
   qcdHist, var, level, chan, outdict = inputs
-  h = GetQCD(qcdHist, level, chan)
+  h = NormQCD(qcdHist, chan, level)
   h = GroupKeepOrder(h, [['process', 'sample', {'QCD':'QCD'}]])
   if var not in outdict: outdict[var] = h
   else: outdict[var] += h
@@ -176,6 +176,7 @@ outdict = dict(outdict)
 saveHistos(path, 'QCD', outdict)
 
 print('\nQCD saved to ', path+'/QCD.pkl.gz')
+
 #progress100 = (progress / total) * 100
 #dt = time.time() - d0
 #minutes = dt / 60

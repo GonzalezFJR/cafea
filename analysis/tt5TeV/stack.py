@@ -27,7 +27,7 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
     #hqcdup = qcd.GetQCD(var, categories,  1)
     #hqcddo = qcd.GetQCD(var, categories, -1)
 
-  b0 = None; bN = None
+  b0 = None; bN = None; binRebin = None
   if var in ['minDRjj', 'minDRuu']:
     b0 = 0.4; bN = 2.0
   elif var in ['medianDRjj']:
@@ -41,15 +41,18 @@ def Draw(var, categories, output=None, label='', outpath='temp/', doQCD=False, d
   elif var in ['sumallpt']:
     b0 = 0; bN = 200
     xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
-  elif var in ['MVAscore','met','u0pt', 'ptuu', 'ptjj']:
+  elif var in ['met','u0pt', 'ptuu', 'ptjj', 'metnocut']:
     b0 = 2;
+  elif var in ['MVAscore']:
+    b0 = 0.1; bN = 0.8
+    binRebin = 2
   elif var in ['ht']:
     b0 = 4;
 
   if b0 is not None:
-    plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True)
+    plt.SetRebin(var, b0, bN, includeLower=True, includeUpper=True, binRebin=binRebin)
     if doQCD: 
-      hqcd   = Rebin(hqcd, var, b0, bN, includeLower=True, includeUpper=True)
+      hqcd   = Rebin(hqcd, var, b0, bN, includeLower=True, includeUpper=True, binRebin=binRebin)
       #hqcdup = Rebin(hqcdup, var, b0, bN, includeLower=True, includeUpper=True)
       #hqcddo = Rebin(hqcddo, var, b0, bN, includeLower=True, includeUpper=True)
     

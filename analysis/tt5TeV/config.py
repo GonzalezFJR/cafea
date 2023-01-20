@@ -43,6 +43,11 @@ if not outpatho.endswith('/'): outpatho += '/'
 
 pathQCD = path
 
+from datetime import datetime
+now = datetime.now()
+datatoday = str(now.strftime('%d')) + str(now.strftime('%B')).lower()[:3] + str(now.strftime('%Y'))[2:]
+baseweb = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/'
+
 # Convert string to list
 if   isinstance(ch, str) and ',' in ch: ch = ch.replace(' ', '').split(',')
 elif isinstance(ch, str): ch = [ch]

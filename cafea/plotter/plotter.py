@@ -70,6 +70,14 @@ def GetHisto(path, hname=None, categories={}, group=None, integrate=None, rebin=
     h = Rebin(h, axname, nbins)
   return h
 
+def CheckValuesHistogram(h, categories):
+  for cat in categories:
+    for val in categories[cat]:
+      ih = h.integrate(cat, val)
+      if ih.values() == {}:
+        return False
+  return True
+
 def CheckHistoCategories(hist, categories, checkValues=False):
   for c in categories:
     hasAxis = c in hist.axes()
@@ -1105,7 +1113,7 @@ class plotter:
 
 
 
-  def Stack(self, hname={}, xtit='', ytit='', aname=None, dosyst=False):
+  def Stack(self, hname={}, xtit='', ytit='', aname=None, dosyst=False, verbose=False):
     ''' prName can be a list of histograms or a dictionary 'histoName : xtit' '''
     if isinstance(hname, dict):
       for k in hname: self.Stack(k, hname[k], ytit)
@@ -1160,6 +1168,9 @@ class plotter:
     if ybkg == {}: return #process not found
     ybkg = ybkg[list(ybkg.keys())[0]]
     ybkgmax = max(ybkg)
+    if not CheckValuesHistogram(h, {'process': self.bkglist}):
+      if verbose: print('  > skipping var: ', hname, '...')
+      return
     hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
 
     ydata = 0; ydatamax = 0
@@ -1204,7 +1215,6 @@ class plotter:
     # Draw uncertainty bands
     if drawSystBand:
       up, do = self.GetUncertaintiesFromHist(hist=hsyst, syst=self.systList, NormUncDict=self.NormUncDict)
-      print('systs', up, do)
       if self.doData(hname) and self.doRatio:
         r1, r2 = DrawUncBands(ax, h.sum('process'), up, do, ratioax=rax, hatch="\/\/", color="gray")
       else:
@@ -1225,7 +1235,7 @@ class plotter:
     if self.output is None: self.output = hname
     fig.savefig(os.path.join(self.outpath, self.output+'.png'))
     fig.savefig(os.path.join(self.outpath, self.output+'.pdf'))
-    print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
+    if verbose: print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
     plt.close('all')
     #else: fig.savefig(os.path.join(self.outpath, hname+'_'+'_'.join(self.region.split())+'.png'))
 

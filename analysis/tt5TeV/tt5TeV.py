@@ -272,7 +272,15 @@ class AnalysisProcessor(processor.ProcessorABC):
         events.MET['pt_raw'] = events.RawMET.pt
 
         if not isData:
-          AddSFs(events, l_sel)
+          e_sel_padded = ak.pad_none(e_sel, 1)
+          m_sel_padded = ak.pad_none(m_sel, 1)
+          events['sf_e'] = ak.fill_none(e_sel_padded[:,0].sf_nom, 1)
+          events['sf_e_hi'] = ak.fill_none(e_sel_padded[:,0].sf_hi, 1)
+          events['sf_e_lo'] = ak.fill_none(e_sel_padded[:,0].sf_lo, 1)
+          events['sf_m'] = ak.fill_none(m_sel_padded[:,0].sf_nom, 1)
+          events['sf_m_hi'] = ak.fill_none(m_sel_padded[:,0].sf_hi, 1)
+          events['sf_m_lo'] = ak.fill_none(m_sel_padded[:,0].sf_lo, 1)
+          AddSFs(events, l_sel) # for 2l
 
         events['isem'] = (ak.num(m_sel) == 1) & (ak.num(e_sel) == 1)
         events['ismm'] = (ak.num(m_sel) == 2) & (ak.num(e_sel) == 0)
@@ -423,10 +431,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             if ch_name in ["em", "ee", "mm"]:
               weights_dict[ch_name].add("lepSF", events.sf_2l, events.sf_2l_hi, events.sf_2l_lo)
             else:
-              weights_dict[ch_name].add("lepSF", ak.copy(events.sf_1l), ak.copy(events.sf_1l_hi), ak.copy(events.sf_1l_lo))
+              #weights_dict[ch_name].add("lepSF", ak.copy(events.sf_1l), ak.copy(events.sf_1l_hi), ak.copy(events.sf_1l_lo))
+              weights_dict[ch_name].add("elecSF", ak.copy(events.sf_e), ak.copy(events.sf_e_hi), ak.copy(events.sf_e_lo))
+              weights_dict[ch_name].add("muonSF", ak.copy(events.sf_m), ak.copy(events.sf_m_hi), ak.copy(events.sf_m_lo))
             weights_dict[ch_name].add("trigSF", ak.copy(events.sf_trig), ak.copy(events.sf_trig_hi), ak.copy(events.sf_trig_lo))
             weights_dict[ch_name].add("btagSF", ak.copy(btagSF), ak.copy(btagSFUp), ak.copy(btagSFDo))
             weights_dict[ch_name].add("prefire", ak.copy(prefweight), ak.copy(prefweightUp), ak.copy(prefweightDown))
+        
      
           # PS = ISR, FSR (on ttPS only)
           if doPS: 
@@ -446,7 +457,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Add systematics
         systList = ["norm"]
         systJets = ['JESUp', 'JESDo']#, 'JERUp', 'JERDown']
-        if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown","btagSFUp", "btagSFDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
+        if not isData and not isSystSample: systList = systList + ["elecSFUp","elecSFDown", "muonSFUp", "muonSFDown", "btagSFUp", "btagSFDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
+        #if not isData and not isSystSample: systList = systList + ["lepSFUp","lepSFDown","btagSFUp", "btagSFDown", "prefireUp", "prefireDown"]+systJets#, "trigSFUp", "trigSFDown"] + systJets
         if doPS: systList += ['ISRUp', 'ISRDown', 'FSRUp', 'FSRDown']
         if not doSyst or isData: systList = ["norm"]
 
@@ -613,6 +625,7 @@ class AnalysisProcessor(processor.ProcessorABC):
           u0eta = ak.flatten(u0.eta)
 
           for ch in channels:
+            if syst in ['elecSFUp', 'elecSFDown', 'muonSFUp', 'muonSFDown'] and ch in ['ee', 'mm', 'em']: continue
             if ch in ['e_fake', 'm_fake']:
               ptSumVecAll, ptSumVeclb, dRlb, st = (ptSumVecAll_fak, ptSumVeclb_fak, dRlb_fak, st_fak)
               if  self.model_3j1b is None and self.model is not None: 

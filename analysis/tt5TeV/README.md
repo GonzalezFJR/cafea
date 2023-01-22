@@ -12,6 +12,10 @@ To estimate QCD, you need to have run over all the samples and have a folder wit
 
     python analysis/tt5TeV/SaveQCD.py -p histos5TeV/16jan2023/ -n 32
 
+You can draw QCD plots (that is, events with fake electrons and muons) using the `DrawQCD.py` script. For example:
+    
+    python analysis/tt5TeV/DrawQCD.py -p histos5TeV/16jan2023/
+
 ## Plotting and tables
 
 There are several scripts to create plots and tables. You can find a description of some of them below.
@@ -29,9 +33,9 @@ Example:
 ## Datacards
 
 You need to create rootfiles and datacards to produce fits and extract the cross section.
-Rootfiles are created with `analysis/tt5TeV/saveCombineFile.py` and then, datacards are created with `analysis/tt5TeV/CreateDatacard.py`.
+Rootfiles are created with `analysis/tt5TeV/SaveRootfile.py` and then, datacards are created with `analysis/tt5TeV/CreateDatacard.py`.
 A script to create all the needed rootfiles and datacards in the analysis is executed as follows:
 
-    python RunCombineProducer.py
+    python analysis/tt5TeV/RunCombineProducer.py -p histos5TeV/16jan2023/
 
-You probably need to modify the inputs within the script.
+The uncertainties must be specified in the python `analysis/tt5TeV/CreateDatacard.py` script. The distributions are specified first in the  `analysis/tt5TeV/SaveRootfile.py` script.

@@ -43,9 +43,10 @@ def loadHistos(path, hname=None):
   if hname is None: return hists
   return hists[hname]
 
-def saveHistos(path, fname, hists):
+def saveHistos(path, fname, hists, verbose=False):
   with gzip.open(os.path.join(path, fname+'.pkl.gz'), 'wb') as f:
     pickle.dump(hists, f)
+  if verbose: print('Saved histograms to %s'%os.path.join(path, fname+'.pkl.gz'))
 
 def GetHisto(path, hname=None, categories={}, group=None, integrate=None, rebin=None):
   ''' Get a histogram from a pkl file (standard output from coffea analysis) '''
@@ -629,7 +630,7 @@ class plotter:
       axname = [x.name for x in histo.dense_axes()]
       self.hists[var] = Rebin(self.hists[var], var, b0, bN, includeLower, includeUpper, binRebin)
 
-  def SetVerbose(verbose=1):
+  def SetVerbose(self, verbose=1):
     ''' Set level of verbosity '''
     self.verbose = verbose
 
@@ -693,6 +694,7 @@ class plotter:
   def GroupProcesses(self, prdic={}):
     ''' Move from grouping in samples to groping in processes '''
     if prdic != {}: self.SetProcessDic(prdic)
+    if self.prDic is None or self.prDic == {}: return
     for k in self.hists.keys(): 
       if len(self.hists[k].identifiers('sample')) == 0: continue
       if k == 'SumOfEFTweights': continue
@@ -974,7 +976,7 @@ class plotter:
         htempdo.scale(self.lumi)
         fout["%s_%sUp"  %(pr, s)] = hist.export1d(htempup)
         fout["%s_%sDown"%(pr, s)] = hist.export1d(htempdo)
-    print('Created file: ', out)
+    if self.verbose: print('Created file: ', out)
     fout.close()
 
 
@@ -1113,7 +1115,7 @@ class plotter:
 
 
 
-  def Stack(self, hname={}, xtit='', ytit='', aname=None, dosyst=False, verbose=False):
+  def Stack(self, hname={}, xtit='', ytit='', aname=None, dosyst=False, verbose=False, doNotSave=False):
     ''' prName can be a list of histograms or a dictionary 'histoName : xtit' '''
     if isinstance(hname, dict):
       for k in hname: self.Stack(k, hname[k], ytit)
@@ -1171,6 +1173,8 @@ class plotter:
     if not CheckValuesHistogram(h, {'process': self.bkglist}):
       if verbose: print('  > skipping var: ', hname, '...')
       return
+    #print('h = ', h)
+    #PrintHisto(h)
     hist.plot1d(h, overlay="process", ax=ax, clear=False, stack=self.doStack, order=self.bkglist[::-1], density=density, line_opts=None, fill_opts=fill_opts, error_opts=None if drawSystBand else self.error_opts, binwnorm=binwnorm)
 
     ydata = 0; ydatamax = 0
@@ -1233,10 +1237,12 @@ class plotter:
     # Save
     os.system('mkdir -p %s'%self.outpath)
     if self.output is None: self.output = hname
-    fig.savefig(os.path.join(self.outpath, self.output+'.png'))
-    fig.savefig(os.path.join(self.outpath, self.output+'.pdf'))
-    if verbose: print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
-    plt.close('all')
+    if not doNotSave:
+      fig.savefig(os.path.join(self.outpath, self.output+'.png'))
+      fig.savefig(os.path.join(self.outpath, self.output+'.pdf'))
+      if verbose: print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
+      plt.close('all')
+    else: return fig, ax, rax
     #else: fig.savefig(os.path.join(self.outpath, hname+'_'+'_'.join(self.region.split())+'.png'))
 
   def GetYields(self, var='counts', cat=None, pr=None, doErr=False, syst=None, overflow='all'):

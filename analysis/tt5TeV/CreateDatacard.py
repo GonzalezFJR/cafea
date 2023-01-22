@@ -2,7 +2,6 @@ from config import *
 #from PDFscaleUncertainties import *
 
 from cafea.modules.CreateDatacardFromRootfile import Datacard
-#outpath = '/nfs/fanae/user/juanr/CMSSW_10_2_13/src/tt5TeV/ljets/7jul2022/'
 
 if  not '/' in path: outpath = './'
 else: outpath = path[:path.rfind('/')]
@@ -19,8 +18,8 @@ def CreateDatacard(fname, outpath=outpath, oname=output):
   bkg =  ['tW', 'WJets', 'QCD', 'DY']
   norm = [0.2, 0.2, 0.2, 0.2]
   signal = 'tt'
-  systList = ['lepSF', 'btagSF', 'FSR', 'ISR', 'JES', 'prefire']# 'hdamp', 'UE', 'trigSF', 'Scales', 'PDF', 'Prefire']
-  d = Datacard(fname, signal, bkg, lumiUnc, norm, systList, nSpaces=12)
+  systList = ['muonSF', 'eleSF', 'btagSF', 'FSR', 'ISR', 'JES', 'prefire']# 'hdamp', 'UE', 'trigSF', 'Scales', 'PDF', 'Prefire']
+  d = Datacard(fname, signal, bkg, lumiUnc, norm, systList, nSpaces=12, verbose=verbose)
   #d.AddExtraUnc('prefiring', 0.014, ['tt', 'tW', 'WJets', 'DY'])
   
   #pdf   = Get1bPDFUnc(  fname, categories=categoriesPDF, sample='TTTo2L2Nu', doPrint=False)

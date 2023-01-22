@@ -28,7 +28,7 @@ def DrawPar(L):
   plt, var, lev, chan, outname = L
   Draw(plt, var, lev, chan, outname)
 
-outpath = baseweb+datatoday+'/'
+outpath = baseweb+datatoday+'/ContorlPlots/'
 print(' >> Output = ', outpath)
 if not os.path.isdir(outpath): os.makedirs(outpath)
 
@@ -42,7 +42,7 @@ plt.SetOutpath(outpath)
 variables = ['met', 'medianDRjj', 'ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb', 'MVAscore', 'metnocut']
 levels = ['g4jets', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
 channels = ['e', 'm']
-systematics = ['ISR', 'FSR', 'btagSF', 'lepSF', 'JES', 'prefire']
+systematics = ['ISR', 'FSR', 'btagSF', 'eleSF', 'muonSF', 'JES', 'prefire']
 plt.SetSystematics(systematics)
 inputs = []
 

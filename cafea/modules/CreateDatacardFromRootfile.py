@@ -8,7 +8,7 @@ from cafea.modules.FixNegValuesRoot import FixNegValuesRoot
 
 
 class Datacard:
-  def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, rmNegBins=True):
+  def __init__(self, fname, signal='', bkgList=[], lumiUnc=0.0, bkgUnc=[], systList=[], nSpaces=10, outname=None, rmNegBins=True, verbose=1):
     if rmNegBins:
       FixNegValuesRoot(fname)
     self.LoadFile(fname)
@@ -25,6 +25,7 @@ class Datacard:
     self.outname = 'temp.txt'
     self.outpath = './'
     self.SetOutName(outname)
+    self.SetVerbose(verbose)
 
   def LoadFile(self, fname):
     self.fname = fname
@@ -32,6 +33,9 @@ class Datacard:
 
   def Close(self):
     self.f.close()
+
+  def SetVerbose(self, verbose):
+    self.verbose = verbose
 
   def SetOutPath(self, outpath):
     if not outpath.endswith('/'): outpath += '/'
@@ -158,7 +162,7 @@ class Datacard:
     with open(fout, 'w') as f:
       f.write(self.GetDatacard())
     self.Close()
-    print('Created datacard: ', fout)
+    if self.verbose: print('Created datacard: ', fout)
 
   #########################################################################################
 

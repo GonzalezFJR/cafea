@@ -26,6 +26,8 @@ parser.add_argument('--outpath',  '-o', default = None                     , hel
 parser.add_argument('--data',     '-d', action= 'store_true'             , help = 'Do data?')
 parser.add_argument('--syst',     '-s', default= None             , help = 'Systematic choice')
 parser.add_argument('--nSlots',   '-n', default= 4             , help = 'Number of slots for parallelization')
+parser.add_argument('--verbose',   default= 0             , help = 'level of verbosity')
+parser.add_argument('--force',  '-f', action= 'store_true'             , help = 'Force to overwrite')
 args = parser.parse_args()
 
 path  = args.path
@@ -36,7 +38,9 @@ output = args.output
 doData = args.data
 outpatho = args.outpath
 systch = args.syst
+verbose = int(args.verbose)
 nSlots = int(args.nSlots)
+force = args.force
 if outpatho is None: outpatho = 'temp/'
 if not outpatho.endswith('/'): outpatho += '/'
 #syst = 'norm'

@@ -36,6 +36,8 @@ def DrawSyst(var, syst, process='tt', chan='m', level='g4jets'):
   colors = ['k', 'r', 'b']
   labels = ['Nominal', '%s up'%syst, '%s down'%syst]
   h = plt.GetHistogram(var)
+  print('h = ', h)
+  PrintHisto(h)
   systlist = [x.name for x in h.identifiers('syst')]
   upsyst = syst+'Up'; dosyst = syst+'Down' if syst+'Down' in systlist else syst+'Do';
   if not upsyst in systlist or not dosyst in systlist:
@@ -46,7 +48,7 @@ def DrawSyst(var, syst, process='tt', chan='m', level='g4jets'):
   plt.DrawComparison(var, process, selec, labels, colors, [], [])
 
 
-pr = 'QCD'
+pr = 'tt'
 if not var is None:
   if systch == 'hdamp':
     hdampup,hdampdo = GetModSystHistos(path, 'TT_hdamp', 'hdamp', var=var)

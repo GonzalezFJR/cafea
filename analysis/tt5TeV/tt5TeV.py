@@ -18,8 +18,6 @@ from cafea.analysis.corrections import GetBTagSF, GetBtagEff, AttachMuonSF, Atta
 from cafea.analysis.selection import *
 from cafea.modules.paths import cafea_path
 
-from NN import EvaluateModelForArrays, EvaluateModelForDataset
-
 fillAll = True
 fillMVA = True
 doSyst = True
@@ -499,7 +497,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Initialize the out object
         hout = self.accumulator.identity()
         channels =['em', 'e', 'm', 'ee', 'mm', 'e_fake', 'm_fake'] 
-        levels = ['incl', 'g1jet', 'g2jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']
+        levels = ['incl', 'g2jets', 'g3jets', 'g4jets', '0b', '1b', '2b', '2j1b', '3j1b', '3j2b','4j1b', '4j2b', 'g5j1b', 'g5j2b']
 
 
         # For trigger
@@ -517,9 +515,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         ht = ak.sum(goodJets.pt,axis=-1)
         nbtagnjets = GetNBtagNJets(njets, nbtags)
 
-        selections.add("g1jet",  (njets>=1))
         selections.add("g2jets", (njets >= 2))
         selections.add("g2ujets", (nujets >= 2))
+        selections.add("g3jets", (njets >= 3))
         selections.add("g4jets", (njets >= 4))
         selections.add("0b",    ((njets >= 4) & (nbtags==0)) )
         selections.add("1b",    ((njets >= 4) & (nbtags==1)) )
@@ -542,7 +540,8 @@ class AnalysisProcessor(processor.ProcessorABC):
           selections.add("g1jetJESUp",  (njetsJESUp >=1))
           selections.add("g2jetsJESUp", (njetsJESUp >= 2))
           selections.add("g2ujetsJESUp", (nujetsJESUp >= 2))
-          selections.add("g4jetsJESUp", (njetsJESUp >= 4))
+          selections.add("g3jetsJESUp", (njetsJESUp >= 3))
+          #selections.add("g4jetsJESUp", (njetsJESUp >= 4))
           selections.add("0bJESUp", ((njetsJESUp >= 4) & (nbtagsJESUp ==0)) )
           selections.add("1bJESUp", ((njetsJESUp >= 4) & (nbtagsJESUp ==1)) )
           selections.add("2bJESUp", ((njetsJESUp >= 4) & (nbtagsJESUp >=2)) )
@@ -558,7 +557,8 @@ class AnalysisProcessor(processor.ProcessorABC):
           selections.add("g1jetJESDo",  (njetsJESDo >=1))
           selections.add("g2jetsJESDo", (njetsJESDo >= 2))
           selections.add("g2ujetsJESDo", (nujetsJESDo >= 2))
-          selections.add("g4jetsJESDo", (njetsJESDo >= 4))
+          selections.add("g3jetsJESDo", (njetsJESDo >= 3))
+          #selections.add("g4jetsJESDo", (njetsJESDo >= 4))
           selections.add("0bJESDo", ((njetsJESDo >= 4) & (nbtagsJESDo ==0)) )
           selections.add("1bJESDo", ((njetsJESDo >= 4) & (nbtagsJESDo ==1)) )
           selections.add("2bJESDo", ((njetsJESDo >= 4) & (nbtagsJESDo >=2)) )
@@ -632,8 +632,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                 DNNscore = DNNscore_fake
             for lev in levels:
               #if syst in systJets and lev != 'incl': lev += syst
-              cuts      = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')] + (['metg30'+(syst if syst in systJets else '')] if lev in ['2j1b', '3j1b', '3j2b'] else [])
-              cutsnoMET = [ch] + [lev + (syst if (syst in systJets and lev != 'incl') else '')]
+              cuts      = [ch] + [lev + (syst if (syst in systJets and lev not in ['incl', 'g4jets']) else '')] + (['metg30'+(syst if syst in systJets else '')] if lev in ['2j1b', '3j1b', '3j2b'] else [])
+              cutsnoMET = [ch] + [lev + (syst if (syst in systJets and lev not in ['incl', 'g4jets']) else '')]
               cut = selections.all(*cuts)
               cutnomet = selections.all(*cutsnoMET)
               weights = weights_dict[ch if not 'fake' in ch else ch[0]].weight(syst if not syst in (['norm']+systJets) else None)
@@ -768,7 +768,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                      # Fill MVA variables
                      if fillMVA and lev == '3j1b' and self.model_3j1b is not None and len(fht) > 0:
                        #vars3j1b = [fht, fst, fptSumVecAll, fj0pt, fu0pt, fptjj, fmjj, fdrjjmed, fdrjjmin, mlb, fptlb, fdRlb, fmedDRuu, fmuu, fptuu]
-                       vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdrjjmin, fmedDRuu, fmuu]
+                       #vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdrjjmin, fmedDRuu, fmuu]
+                       vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdRlb, fmedDRuu, fmuu]
                        MVAscore_nom_3j1b = self.model_3j1b.predict_proba(np.column_stack(vars3j1b))[:,1]
                        hout['MVAscore'].fill(sample=histAxisName, channel=ch, level=lev, MVAscore=MVAscore_nom_3j1b, syst=syst, weight=weights)
 
@@ -791,7 +792,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                      # Fill MVA variables
                      if fillMVA and lev == '3j1b' and self.model_3j1b is not None and len(fht) > 0:
                        #vars3j1b = [fht, fst, fptSumVecAll, fj0pt, fu0pt, fptjj, fmjj, fdrjjmed, fdrjjmin, mlb, fptlb, fdRlb, fmedDRuu, fmuu, fptuu]
-                       vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdrjjmin, fmedDRuu, fmuu]
+                       vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdRlb, fmedDRuu, fmuu]
+                       #vars3j1b = [fht, fj0pt, fmjj, fdrjjmed, mlb, fdrjjmin, fmedDRuu, fmuu]
                        MVAscore_nom_3j1b = self.model_3j1b.predict_proba(np.column_stack(vars3j1b))[:,1]
                        hout['MVAscore'].fill(sample=histAxisName, channel=ch, level=lev, MVAscore=MVAscore_nom_3j1b, syst=syst, weight=weights)
 

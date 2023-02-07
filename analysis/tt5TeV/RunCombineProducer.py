@@ -32,7 +32,7 @@ for ch in channels:
           os.system(mvcommand)
 
         # Create the datacard
-        cardcommand = f"python analysis/tt5TeV/CreateDatacard.py -p {pathcomb+outname}"
+        cardcommand = f"python analysis/tt5TeV/CreateDatacard.py -p {path} --inputFile {pathcomb+outname}"
         if verbose >= 1: print("Running: %s"%(cardcommand))
         os.system(cardcommand)
         if verbose >= 1: print("  ")

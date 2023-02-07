@@ -6,6 +6,10 @@ The main analysis is in `tt5TeV.py`. To run it, use the `run.py` scrip. You need
 
 To execute all the samples, you can use the script `run5TeV.sh`.
 
+## The config script
+
+The config script, `analysis/tt5TeV/config.py` is imported by all the plotting scripts of the repo. It contains basic information about paths, rebinnings and other stuff. You might want to modify some of the paths, especially some of the output paths, which are by default created according to the current date. It also define some labels to use in the legends, etc.
+
 ## QCD estimate
 
 To estimate QCD, you need to have run over all the samples and have a folder with all the .pkl.gz files. The script `SaveQCD.py` takes those inputs and creates a `QCD.pkl.gz` file with the QCD estimate. Run the script as:
@@ -20,15 +24,28 @@ You can draw QCD plots (that is, events with fake electrons and muons) using the
 
 There are several scripts to create plots and tables. You can find a description of some of them below.
 
- - ControlPlots.py: Produce control plots. You can modify the variables, channels and levels.
+ - ControlPlots.py: Produce control plots. You can modify the variables, channels and levels. This script produces data/MC plots in general. It is also used to produce MVA and QCD control plot.
 Example:
 
-    python ControlPlots.py -p histos5TeV/16jan2023/ -n 16
+    python analysis/tt5TeV/ControlPlots.py -p histos5TeV/16jan2023/ -n 16
 
  - PlotSystematics.py: Produce systematic plots, including comparisions. By default, it is done for ttbar only.
 Example:
 
-    python PlotSystematics.py -p histos5TeV/16jan2023/ 
+    python analysis/tt5TeV/PlotSystematics.py -p histos5TeV/16jan2023/ 
+
+ - DrawTTmodAltSamp.py: Produce plots for hdamp and UE tune uncertainties from alternative samples where the systematic uncertainty of the alternative predictions is shown, as a function of jet and b-tag multiplicities.
+Example:
+
+    python analysis/tt5TeV/DrawTTmodAltSamp.py -p histos5TeV/22jan2023/
+
+## MVA plots
+
+MVA plots are produced with several scripts. Some of them are produced with the `ControlPlots.py` script, mentioned above. Training and performance plots are produced with `MVAplots.py` scripts as follows:
+
+    python analysis/tt5TeV/MVAplots.py
+
+In this case, the relevant paths are directly hardcoded in the script.
 
 ## Datacards
 

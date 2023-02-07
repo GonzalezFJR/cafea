@@ -6,12 +6,6 @@
 
 from config import *
 
-if __name__ == '__main__':
-  h = GetHisto(path, 'PDF', categories={'level':level, 'channel':ch,'syst':'norm'})
-#PrintHisto(h)
-#print('values = ', h.values())
-#exit()
-
 def Get1bPDFUnc(path, categories={}, name='PDF', sample=None, doPrint=False):
   if not 'syst' in categories: categories['syst'] = 'norm'
   if not sample is None:
@@ -72,6 +66,13 @@ def Get1binScaleUnc(path, categories={}, name='Scales', sample=None, doPrint=Fal
   return maxvar/muR1muF1
 
 if __name__ == '__main__':
-  Get1bPDFUnc(  path, categories={'sample':'tt', 'channel':ch, 'level':level}, doPrint=True)
-  Get1binScaleUnc(path, categories={'sample':'tt', 'channel':ch, 'level':level}, doPrint=True)
+  levels = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
+  channels = ['e', 'm']
+  for l in levels:
+    for ch in channels:
+      print('\n\n########## Level: %s, channel: %s'%(l, ch))
+      print('>>>> PDF uncertainties')
+      Get1bPDFUnc(  path, categories={'sample':processDic['tt'], 'channel':ch, 'level':level}, doPrint=True)
+      print('>>>> Scale uncertainties')
+      Get1binScaleUnc(path, categories={'sample':processDic['tt'], 'channel':ch, 'level':level}, doPrint=True)
 

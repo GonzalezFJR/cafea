@@ -53,6 +53,10 @@ def GetQCDforVar(var):
   h_mc_fake.scale(-1*lumi)
   FillDataSystCategories(h_data_fake)#, var=var)
   htot = (h_data_fake + h_mc_fake)
+  hd  = h_data_fake.integrate('channel', 'e').integrate('process').integrate('level', '4j2b').integrate('syst', 'norm')
+  hmc = h_mc_fake.integrate('channel', 'e').integrate('process').integrate('level', '4j2b').integrate('syst', 'norm')
+  ht  = htot.integrate('channel', 'e').integrate('process').integrate('level', '4j2b').integrate('syst', 'norm')
+
   return htot
 
 def GroupCats(h, catdic):

@@ -173,7 +173,8 @@ def GetXYfromH1D(h, axis=None, mode='edges', errors=False, overflow=False, EFT_W
   #print('y = ', y)
   if overflow:
     ym1 = y[-1]; y = y[:-1]; y[-1] += ym1
-    yem1 = ye[-1]; ye = ye[:-1]; ye[-1] = np.sqrt(ye[-1] + yem1)
+    yem1 = ye[-1]; ye = ye[:-1]; ye[-1] = (ye[-1] + yem1)
+  ye = np.sqrt(ye)
   if errors: return x, y, ye
   return x,y
 
@@ -251,7 +252,21 @@ def CheckArray(arr):
     return CheckArray(arr.values())
   return arr
 
-def DrawUncBands(ax, hnom, up, down, ratioax=None, relative=False, alpha=None, hatch=None, fillcolor=None, color="gray"):
+def DivideHistWithErrors(hnum, hden, hnumUp=None, hnumDo=None):
+    ''' Divide two histograms with errors '''
+    hrat = hnum.copy()
+    hrat._sumw = {():hnum._sumw[()]/hden._sumw[()]}
+    hrat._sumw2 = {():hnum._sumw[()]/hden._sumw[()]}
+    if hnumUp is not None and hnumDo is not None:
+        hratUp = hnum.copy()
+        hratUp._sumw = {():hnumUp._sumw[()]/hden._sumw[()]}
+        hratDo = hnum.copy()
+        hratDo._sumw = {():hnumDo._sumw[()]/hden._sumw[()]}
+        return hrat, hratUp, hratDo
+    else:
+        return hrat
+
+def DrawUncBands(ax, hnom, up, down, ratioax=None, relative=False, alpha=None, hatch=None, fillcolor=None, color="gray", label=None):
   nom = CheckArray(hnom)
   axis = hnom.axes()[0].name
   bins = hnom.axis(axis).edges()
@@ -262,14 +277,15 @@ def DrawUncBands(ax, hnom, up, down, ratioax=None, relative=False, alpha=None, h
   for k in range(len(x)):
     yd = down[k]; yu = up[k]
     mm = x[k]; md = Xlo[k]; mu = Xhi[k]
-    r1 = ax.fill_between([md, mm, mu], [yu, yu, yu], [yd, yd, yd], edgecolor=color, linewidth=0, facecolor=fillcolor if fillcolor is not None else 'none', alpha=alpha, hatch=hatch)
+    r1 = ax.fill_between([md, mm, mu], [yu, yu, yu], [yd, yd, yd], edgecolor=color, linewidth=0, facecolor=fillcolor if fillcolor is not None else 'none', alpha=alpha, hatch=hatch, label=label if k==0 else None)
+    r1 = ax
   if ratioax is not None:
     rup = up/nom
     rdo = down/nom
     for k in range(len(x)):
       yd = rdo[k]; yu = rup[k]
       mm = x[k]; md = Xlo[k]; mu = Xhi[k]
-      r2 = ratioax.fill_between([md, mm, mu], 3*[yu], 3*[yd], edgecolor=color, linewidth=0, facecolor=fillcolor if fillcolor is not None else 'none', alpha=alpha, hatch=hatch)
+      r2 = ratioax.fill_between([md, mm, mu], 3*[yu], 3*[yd], edgecolor=color, linewidth=0, facecolor=fillcolor if fillcolor is not None else 'none', alpha=alpha, hatch=hatch, label=label if k==0 else None)
   return r1, r2
 
 def GetRatioAssymetricUncertainties(num, numDo, numUp, den, denDo, denUp):
@@ -377,7 +393,7 @@ def DrawEff(hnumMC, hdenMC, hnumData, hdenData, title='Efficiencies', xtit='|$\e
   print('New png created: ', outname)
   fig.savefig(outname)
 
-def DrawComp(histos, colors='k', axis='', title='', labels=None, xtit=None, ytit=None, doFill=None, outname=None, verbose=False, EFT_WCdict=None):
+def DrawComp(histos, colors='k', axis='', title='', labels=None, xtit=None, ytit=None, doFill=None, outname=None, verbose=False, EFT_WCdict=None, save=True):
   if not isinstance(histos, list): histos = [histos]
   if len(histos) <= 1:
     if EFT_WCdict != None:
@@ -460,10 +476,13 @@ def DrawComp(histos, colors='k', axis='', title='', labels=None, xtit=None, ytit
   #rax.set_ylim(min(ratio+do)*0.9, max(ratio+up)*1.15) 
 
   # output
-  outname = (outname if outname is not None else 'temp.png')
-  if not outname.endswith('.png'): outname += '.png'
-  print('New png created: ', outname)
-  fig.savefig(outname)
+  if save:
+    outname = (outname if outname is not None else 'temp.png')
+    if not outname.endswith('.png'): outname += '.png'
+    print('New png created: ', outname)
+    fig.savefig(outname)
+  else:
+    return fig, ax, rax
 
 def DrawEff2D(h, xaxis, error=None, error2=None, xtit='', ytit='', tit='', outname='temp.png'):
   ''' Draw 2D histograms with scale factors from data and MC histograms with numerator and denominator '''
@@ -574,6 +593,52 @@ def GetFileNameFromPath(path):
   return name
 
 
+def DrawUncPerBin(fname, syst, process='tt', cat={}, var='njet', outpath='./', outname='systematics', prDic={}, nomsyst='norm', systaxis='syst', binLabels=[], savefig=True):
+    if not os.path.exists(outpath): os.makedirs(outpath)
+    if not isinstance(syst, list): syst = [syst]
+
+    fig, ax = plt.subplots(len(syst), sharex=True, sharey=False)
+    fig.subplots_adjust(hspace=0.3)
+
+    p = plotter(fname, prDic=prDic, var=var)
+    h = p.GetHistogram(var, process=process, categories=cat)
+    systlist = [x.name for x in h.identifiers(systaxis)]
+    hnom = h.integrate(systaxis, nomsyst).values()[()]
+    bins = h.dense_axes()[0].centers()
+    values = np.zeros(len(bins))
+    for s in syst:
+        if not s+'Up' in systlist:
+          print('WARNING: Systematic {} not found in file {}'.format(s, fname))
+          continue
+        values_up = (h.integrate(systaxis, s+'Up').values()[()] - hnom)/(hnom)*100
+        values_dw = (hnom - h.integrate(systaxis, (s+'Down') if (s+'Down') in systlist else (s+'Do')).values()[()])/(hnom)*100
+        values_up[np.isnan(values_up)] = 0
+        values_dw[np.isnan(values_dw)] = 0
+        theax = ax[syst.index(s)] if len(syst)>1 else ax
+        if len(syst)>1:
+          theax.errorbar(bins, values, yerr=[values_dw, values_up], fmt='o', color='black')
+          theax.set_ylabel(s)
+          theax.set_ylim(-min(max(max(values_up), max(values_dw)), 30), min(max(max(values_up), max(values_dw)), 30))
+          theax.set_xticks([])
+          theax.set_xticklabels([])
+    firstax = ax[0] if len(syst)>1 else ax
+    lastax = ax[-1] if len(syst)>1 else ax
+    lastax.set_xlabel('')
+    if binLabels != []:
+      lastax.set_xticks(np.arange(0, len(binLabels)))
+      lastax.set_xticklabels(binLabels, rotation=90)
+    fig.set_size_inches(8, 7)
+    fig.subplots_adjust(right=0.97, top=0.92, bottom=0.13, left=0.15)
+    # Add text on top
+    # Add horizontal text on the left
+    firstax.text(-0.13, -(len(syst)-1)/2, 'Uncertainty [%]', horizontalalignment='center', verticalalignment='center', transform=firstax.transAxes, fontsize=15, rotation=90)
+    if savefig:
+      fig.savefig(outpath + outname + '.png')
+      fig.savefig(outpath + outname + '.pdf')
+      print('Saved to: ', outpath + outname + '.png')
+    else:
+        return fig, ax
+
 
 
 
@@ -618,6 +683,7 @@ class plotter:
     self.systList = None
     self.SetRebin()
     self.SetNormUncDict()
+    self.SetLegendLabels()
     
   def SetRebin(self, var=None, rebin=None, bN=None, includeLower=True, includeUpper=True, binRebin=None):
     self.rebin = rebin
@@ -796,6 +862,14 @@ class plotter:
   def AddLabel(self, x, y, text, options={}):
     lab = {'x':x, 'y':y, 'text':text, 'options':options}
     self.labels.append(lab)
+
+  def SetLegendLabels(self, labdict={}, labs=None):
+    self.legendLabels = {}
+    if isinstance(labdict, list) and isinstance(labs, list):
+      for i in range(len(labdict)):
+        self.legendLabels[labdict[i]] = labs[i]
+    elif isinstance(labdict, dict):
+      self.legendLabels = labdict
 
   def AddExtraBkgHist(self, h, add=False):
     if not isinstance(h, list): h = [h]
@@ -1010,7 +1084,7 @@ class plotter:
 
 
 
-  def DrawComparison(self, var, process, selection, labels=[], color=[], lineStyle=[], scale=[], doRatio=True, xtit='', ytit=''):
+  def DrawComparison(self, var, process, selection, labels=[], color=[], lineStyle=[], scale=[], doRatio=True, xtit='', ytit='', save=True):
     # Var can be list of N elemnts or a string
     # listOfProcessDics --> N elements of the form: process : {selection dic}, the comparisons are done w.r.t. the first one
     # labels, color, lineStyle, scale --> list of N elements
@@ -1096,9 +1170,12 @@ class plotter:
     # Save
     os.system('mkdir -p %s'%self.outpath)
     if self.output is None: self.output = 'comp'
-    fig.savefig(os.path.join(self.outpath, self.output+'.png'))
-    print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
-    plt.close('all')
+    if save:
+      fig.savefig(os.path.join(self.outpath, self.output+'.png'))
+      print('New plot: ', os.path.join(self.outpath, self.output+'.png'))
+      plt.close('all')
+    else:
+      return fig, ax, rax
 
 
 
@@ -1198,6 +1275,10 @@ class plotter:
       if self.doData(hname):
         handles = handles[-1:]+handles[:-1][::-1]
         labels = [dataLabel]+labels[:-1][::-1]
+      if len(self.legendLabels)>0:
+        for k , lab in self.legendLabels.items():
+          if k in labels:
+            labels[labels.index(k)] = lab
       ax.legend(handles, labels)#,bbox_to_anchor=leg_anchor,loc=leg_loc)
     
     if self.doData(hname) and self.doRatio:

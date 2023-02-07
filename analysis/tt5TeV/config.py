@@ -28,6 +28,7 @@ parser.add_argument('--syst',     '-s', default= None             , help = 'Syst
 parser.add_argument('--nSlots',   '-n', default= 4             , help = 'Number of slots for parallelization')
 parser.add_argument('--verbose',   default= 0             , help = 'level of verbosity')
 parser.add_argument('--force',  '-f', action= 'store_true'             , help = 'Force to overwrite')
+parser.add_argument('--inputFile',  default=''             , help = 'Used for combine scripts')
 args = parser.parse_args()
 
 path  = args.path
@@ -40,6 +41,7 @@ outpatho = args.outpath
 systch = args.syst
 verbose = int(args.verbose)
 nSlots = int(args.nSlots)
+inputFile = args.inputFile
 force = args.force
 if outpatho is None: outpatho = 'temp/'
 if not outpatho.endswith('/'): outpatho += '/'
@@ -67,6 +69,8 @@ processDic = {
   'DY': 'DYJetsToLLMLL50, DYJetsToLLM10to50',
   'data' : 'SingleMuon, HighEGJet',
 }
+
+diclegendlabels = {'None':'Data', 'tt':'$\\mathrm{t\\bar{t}}$', 'DY':'Drell-Yan', 'WJets':'W+jets', 'QCD':'QCD'}
 
 processDic_noQCD = processDic.copy()
 processDic_noQCD.pop('QCD')
@@ -126,12 +130,14 @@ def GetModSystHistos(path, fname, systname, var=None):
 def RebinVar(p, var, level=None):
   b0 = None; bN = None; binRebin=None
   xtit = None
+
   if var in ['minDRjj', 'minDRuu']:
     b0 = 0.4; bN = 2.0
   elif var =='medianDRjj':
-    b0 = 1.0; bN = 3.5
-  elif var =='MVAscore':
-    b0 = 0.10; bN = 0.8; binRebin=2
+    #b0 = 1.0; bN = 3.5
+    b0 = 1.4; bN = 3.2
+  elif var in ['medianDRuu']:
+    b0 = 0.5; bN = 3.7
   elif var == "njets" and 'level' != 'incl':
     b0 = 4; bN = 10
   elif var in ['st']:
@@ -139,13 +145,24 @@ def RebinVar(p, var, level=None):
   elif var in ['sumallpt']:
     b0 = 0; bN = 200
     xtit = '$\sum_\mathrm{j,\ell}\,\mathrm{p}_{T}$ (GeV)'
-  elif var in ['met','u0pt', 'ptuu', 'ptjj', 'metnocut']:
+  elif var in ['met','u0pt', 'ptuu', 'ptjj']:
     b0 = 2;
+  elif var in ['metnocut']:
+    b0 = 4;
   elif var in ['MVAscore']:
-    b0 = 0.1; bN = 0.8
+    b0 = 0.2; bN = 0.8
     binRebin = 2
   elif var in ['ht']:
-    b0 = 4;
+    b0 = 100; bN = 450
+    binRebin = 2;
+  elif var in ['j0pt']:
+    b0 = 40; bN = 200
+  elif var in ['mjj', 'muu']:
+    b0 = 25; bN = 150
+  elif var in ['mlb']:
+    b0 = 25; bN = 200
+  elif var in ['dRlb']:
+    b0 = 0.5; bN = 2.9
   if b0 is not None:
     p.SetRebin(var, b0, bN, includeLower=True, includeUpper=True, binRebin=binRebin)
   return xtit

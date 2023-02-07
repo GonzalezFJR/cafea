@@ -3,10 +3,11 @@ from coffea import hist, lookup_tools
 from cafea.plotter.plotter import GetHisto, GetSFfromCountsHisto, DrawEff, DrawEff2D, GetH2DfromXY, loadHistos, GetEff
 import matplotlib.pyplot as plt
 import numpy as np
+from config import *
 
-def DrawHistoBtag(path, WP='medium', flav=5, year='2016', outpath=''):
+def DrawHistoBtag(path, WP='medium', flav=5, year=None, outpath=''):
   var='jetptetaflav'
-  path = path%year
+  path = path%year if year is not None else path
   hu = GetHisto(path, var, {'WP':WP,   'flav':flav})#  , 'flav':flav})
   hd = GetHisto(path, var, {'WP':'all', 'flav':flav})
   hnum = GetHisto(path, var, {'WP':WP,})
@@ -25,15 +26,19 @@ def DrawHistoBtag(path, WP='medium', flav=5, year='2016', outpath=''):
   eta = np.array([0.1, 0.1, 0.1]);
   fla = np.array([1, 4, 5]);
   sflav = 'b' if flav==5 else ('c' if flav==4 else 'l')
-  DrawEff2D(h2d,'pt', error=None, error2=None, xtit='$p_{T}$ (GeV)', ytit='|$\eta$|', tit='', outname=outpath+'btagSF_%s_%s_%s.png'%(year, WP, sflav))
-  DrawEff2D(h2d,'pt', error=None, error2=None, xtit='$p_{T}$ (GeV)', ytit='|$\eta$|', tit='', outname=outpath+'btagSF_%s_%s_%s.pdf'%(year, WP, sflav))
+  DrawEff2D(h2d,'pt', error=None, error2=None, xtit='$p_{T}$ (GeV)', ytit='|$\eta$|', tit='', outname=outpath+('btagSF_%s_%s_%s.png'%(year, WP, sflav) if year is not None else 'btagSF_%s_%s.png'%(WP, sflav)))
+  DrawEff2D(h2d,'pt', error=None, error2=None, xtit='$p_{T}$ (GeV)', ytit='|$\eta$|', tit='', outname=outpath+('btagSF_%s_%s_%s.pdf'%(year, WP, sflav) if year is not None else 'btagSF_%s_%s.pdf'%(WP, sflav)))
 
 
-#path = '/nfs/fanae/user/juanr/coffea/cafea/cafea/data/btagSF/UL/btagMCeff_%s.pkl.gz'
-path = '/nfs/fanae/user/juanr/coffea/topcoffea/histos/btagMCeff_%s.pkl.gz'
-outpath = '/nfs/fanae/user/juanr/www/public/topEFT/BtaggingSFs_deepCSV_WZ/'
+outpath = baseweb+datatoday+'/B-tagging/'
+if not os.path.exists(outpath):
+  os.makedirs(outpath)
+
+# cafea/data/btagSF/UL/btagMCeff_5TeV.pkl.gz
+if not os.path.isfile(path):
+  print('File not found. Specify SF files with the -p options.')
+  exit()
 
 for wp in ['loose', 'medium', 'tight']:
   for f in [1, 4, 5]:
-    for y in ['2018']:#['2016', '2016APV', '2017', '2018']:
-      DrawHistoBtag(path, wp, f, y, outpath=outpath)
+    DrawHistoBtag(path, wp, f, outpath=outpath)

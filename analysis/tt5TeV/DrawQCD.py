@@ -1,57 +1,69 @@
+'''
+ Same as ControlPlots.py, but avoids loading QCD for drawing non-QCD iso and non-iso plots
+'''
+
+
 from config import *
-from QCD import *
 import warnings
-from datetime import datetime
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+from cafea.plotter.plotter import DrawUncPerBin
 
+from ControlPlots import DrawAll
 
-def Draw(plt, var, level, channel):
-  categories =  {'level':level, 'channel':channel}
-  plt.SetCategories(categories)
-  if not CheckHistoCategories(plt.hists[var], categories):
-    print(f'Nop... [{var}] cat = ', categories)
-    return
-  label = GetChLab(categories['channel']) + GetLevLab(categories['level']) 
-  xtit = RebinVar(plt, var, level)
-  plt.SetRegion(label)
-  plt.SetOutpath(outpath)
-  plt.SetOutput(output)
-  #plt.SetLogY()
-    
-  aname = None
-  if   var == 'l0pt': aname = 'lep0pt'
-  elif var == 'l0eta': aname = 'lep0eta'
-  plt.Stack(var, xtit=xtit, ytit=None, aname=aname, dosyst=True)
-
-now = datetime.now()
-dat = str(now.strftime('%d')) + str(now.strftime('%B')).lower()[:3] + str(now.strftime('%Y'))[2:]
-outpatho = dat+'/QCD/'
-outpath = '/nfs/fanae/user/juanr/www/public/tt5TeV/ljets/' + outpatho
-print(' >> Output = ', outpath)
-if not os.path.isdir(outpath): os.makedirs(outpath)
-
-print(' >> Loading histograms! This might take a while...')
-plt = plotter(path, prDic=processDic_noQCD, bkgList=bkglist_noQCD, colors=colordic, lumi=lumi)
-plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
-plt.SetRatio(True)
-plt.plotData = True
-
-variables = ['met', 'medianDRjj', 'DNNscore', 'ht', 'st', 'counts', 'njets', 'nbtags', 'met', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta','mjj', 'mt', 'ptjj', 'minDRjj', 'medianDRjj', 'u0pt', 'u0eta', 'minDRuu', 'medianDRuu', 'ptlb', 'ptuu', 'mlb', 'sumallpt', 'dRlb']
-levels = ['g4jets', '3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
-channels = ['e_fake', 'm_fake']
-
+def QCDnormUncPlot(path, outpath='./'):
+   qcd = GetHisto(path, 'counts', {'sample':'QCD'})
+   levels = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
+   channels = ['e', 'm']
+   syst = 'QCD'
+   for c in channels:
+    for l in levels:
+      hnorm = qcd.integrate('channel', c).integrate('level', l).integrate('syst', 'norm')
+      if hnorm.values() == {}:
+        maxrel = 0
+      else:
+        norm = hnorm.values()[()]
+        up   = qcd.integrate('channel', c).integrate('level', l).integrate('syst', syst+'Up').values()[()]
+        do   = qcd.integrate('channel', c).integrate('level', l).integrate('syst', syst+'Down').values()[()]
+        maxrel = max(abs(up-norm), abs(do-norm))/norm
+      print('QCD norm unc in %s %s: %.2f'%(c, l, maxrel))
 
 if __name__=="__main__":
-  if not var is None:
-    Draw(plt, var, level, ch)
-  else:
-    for c in channels: 
-      for l in levels: 
-        cat = {'channel':c, 'level':l}
-        clab = c if not isinstance(c, list) else 'l'
-        outp = outpath+'/1l/'+clab+'/'+l+'/'
-        for var in variables:
-          if l=='incl' and var in ['j0pt', 'j0eta']: continue
-          outname = "%s_%s_%s"%(var, clab, l)
-          Draw(var, cat, outname, outpath=outpath)
+  outpathQCD = baseweb+datatoday+'/QCD/'
+  if not os.path.isdir(outpathQCD): os.makedirs(outpathQCD)
+
+  #QCDnormUncPlot(path+'/QCD.pkl.gz', outpathQCD)
+  #exit()
+
+  print(' >> Loading histograms! This might take a while...')
+  plt = plotter(path, prDic=processDic_noQCD, bkgList=bkglist_noQCD, colors=colordic, lumi=lumi)
+  plt.SetLumi(lumi, "pb$^{-1}$", "5.02 TeV")
+  plt.SetRatio(True)
+  plt.SetVerbose(verbose)
+  plt.plotData = True
+
+  variables = ['metnocut', 'medianDRjj', 'ht', 'j0pt', 'j0eta', 'ept', 'eeta', 'mpt', 'meta', 'mt']
+  levels = ['3j1b', '3j2b', '4j1b', '4j2b', 'g5j1b', 'g5j2b']
+  channels_fake = ['e_fake', 'm_fake']
+  channels = ['e', 'm']
+
+  ### Uncertainties
+  #outpath = outpathQCD+'/uncertainty/'
+  #if not os.path.isdir(outpath): os.makedirs(outpath)
+  #outname = 'QCD_uncertainty'
+  #fname = path + 'QCD.pkl.gz'
+  #DrawUncPerBin(fname,  ['QCD'], process='QCD', var='ht', outpath=outpath, outname=outname, prDic=processDic, cat={'channel':'e', 'level':'3j1b'})
+  #exit()
+
+  ### Non-iso plots
+  outpath = outpathQCD+'/non-iso/'
+  if not os.path.isdir(outpath): os.makedirs(outpath)
+  print('[No-iso control plots] Output = ', outpath)
+  DrawAll(plt, outpath, variables, levels, channels_fake, nSlots=nSlots)
+
+  ### No QCD plots
+  outpath = outpathQCD+'/noQCD/'
+  if not os.path.isdir(outpath): os.makedirs(outpath)
+  print('[No-QCD control plots] Output = ', outpath)
+  DrawAll(plt, outpath, variables, levels, channels, nSlots=nSlots)
+
 
